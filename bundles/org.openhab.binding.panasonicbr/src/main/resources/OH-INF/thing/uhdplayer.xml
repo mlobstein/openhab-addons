@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="panasonicbr"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Panasonic UHD Blu-ray Player Thing -->
+	<thing-type id="uhd_player">
+		<label>Panasonic UHD Blu-ray Player</label>
+		<description>
+			DP-UB420, DP-UB820 or DP-UB9000
+		</description>
+
+		<channels>
+			<channel id="button" typeId="uhd_button"/>
+			<channel id="play_mode" typeId="play_mode"/>
+			<channel id="time_elapsed" typeId="time_elapsed"/>
+		</channels>
+
+		<config-description>
+			<parameter name="hostName" type="text" required="true">
+				<context>network-address</context>
+				<label>Player Host Name/IP Address</label>
+				<description>Host Name or IP Address of the Player</description>
+			</parameter>
+			<parameter name="refresh" type="integer" min="10" required="false" unit="s">
+				<label>Refresh Interval</label>
+				<description>Specifies the Refresh Interval in Seconds</description>
+				<default>10</default>
+				<unitLabel>s</unitLabel>
+			</parameter>
+			<parameter name="playerKey" type="text" required="false">
+				<label>Player Key</label>
+				<description>To Enable Authentication of Control Commands, a Key for the Player Must be Specified</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<channel-type id="uhd_button">
+		<item-type>String</item-type>
+		<label>Remote Button</label>
+		<description>A Remote Button Press to Send to The Player</description>
+		<state>
+			<options>
+				<option value="RC_POWERON">Power On</option>
+				<option value="RC_POWEROFF">Power Off</option>
+				<option value="RC_POWER">Power Toggle</option>
+				<option value="RC_PLAYBACK">Play</option>
+				<option value="RC_PAUSE">Pause</option>
+				<option value="RC_STOP">Stop</option>
+				<option value="RC_CUE">Fast Fwd</option>
+				<option value="RC_REV">Reverse</option>
+				<option value="RC_SKIPFWD">Skip Fwd</option>
+				<option value="RC_SKIPREV">Skip Back</option>
+				<option value="RC_MNSKIP">Manual Skip +60s</option>
+				<option value="RC_MNBACK">Manual Skip -10s</option>
+				<option value="RC_OP_CL">Open/Close</option>
+				<option value="RC_DSPSEL">Status</option>
+				<option value="RC_TITLE">Top Menu</option>
+				<option value="RC_PUPMENU">Pop-up Menu</option>
+				<option value="RC_UP">Up</option>
+				<option value="RC_DOWN">Down</option>
+				<option value="RC_LEFT">Left</option>
+				<option value="RC_RIGHT">Right</option>
+				<option value="RC_SELECT">OK</option>
+				<option value="RC_MENU">Submenu</option>
+				<option value="RC_RETURN">Return</option>
+				<option value="RC_D1">1</option>
+				<option value="RC_D2">2</option>
+				<option value="RC_D3">3</option>
+				<option value="RC_D4">4</option>
+				<option value="RC_D5">5</option>
+				<option value="RC_D6">6</option>
+				<option value="RC_D7">7</option>
+				<option value="RC_D8">8</option>
+				<option value="RC_D9">9</option>
+				<option value="RC_D0">0</option>
+				<option value="RC_D12">12</option>
+				<option value="RC_CLEAR">Clear</option>
+				<option value="RC_SHARP">#</option>
+				<option value="RC_RED">Red</option>
+				<option value="RC_GREEN">Green</option>
+				<option value="RC_BLUE">Blue</option>
+				<option value="RC_YELLOW">Yellow</option>
+				<option value="RC_MLTNAV">Home</option>
+				<option value="RC_NETFLIX">Netflix</option>
+				<option value="RC_V_CAST">Internet</option>
+				<option value="RC_SETUP">Setup</option>
+				<option value="RC_EXIT">Exit</option>
+				<option value="RC_AUDIOSEL">Audio</option>
+				<option value="RC_TITLEONOFF">Subtitle</option>
+				<option value="RC_CLOSED_CAPTION">Closed Caption</option>
+				<option value="RC_PLAYBACKINFO">Playback Info</option>
+				<option value="RC_HDR_PICTUREMODE">HDR Picture Mode</option>
+				<option value="RC_MIRACAST">Mirroring</option>
+				<option value="RC_PICTURESETTINGS">Picture Setting</option>
+				<option value="RC_SOUNDEFFECT">Sound Effect</option>
+				<option value="RC_HIGHCLARITY">High Clarity</option>
+			</options>
+		</state>
+	</channel-type>
+
+	<channel-type id="play_mode">
+		<item-type>String</item-type>
+		<label>Play Mode</label>
+		<description>The Current Playback Mode</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="time_elapsed">
+		<item-type>Number:Time</item-type>
+		<label>Playback Time</label>
+		<description>The Current Playback Time Elapsed</description>
+		<state readOnly="true" pattern="%d %unit%"/>
+	</channel-type>
+
+</thing:thing-descriptions>
