@@ -103,11 +103,8 @@ public class PanasonicHandler extends BaseThingHandler {
 
         this.thingTypeUID = thing.getThingTypeUID();
 
-        @Nullable
-        final String host = config.hostName;
-
-        @Nullable
-        final String playerKey = config.playerKey;
+        final @Nullable String host = config.hostName;
+        final @Nullable String playerKey = config.playerKey;
 
         if (host != null && !host.equals("")) {
             urlStr = urlStr.replace("%host%", host);

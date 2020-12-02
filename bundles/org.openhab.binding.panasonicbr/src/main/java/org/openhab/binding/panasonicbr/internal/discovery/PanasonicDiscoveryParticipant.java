@@ -89,7 +89,7 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
                 boolean foundMatch = MODELS.stream().anyMatch(model -> (device.getDetails().getModelDetails()
                         .getModelNumber().toUpperCase().contains(model)));
 
-                if (foundMatch)
+                if (foundMatch) {
                     if (device.getDetails().getModelDetails().getModelNumber().toUpperCase().contains("UB")) {
                         if (!device.getType().getType().equals("Basic")) {
                             return null;
@@ -98,6 +98,7 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
                     } else {
                         return new ThingUID(PanasonicBindingConstants.THING_TYPE_BD_PLAYER, id);
                     }
+                }
             }
         }
         return null;

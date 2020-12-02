@@ -191,6 +191,7 @@ panasonicbr.items:
 String Player_Button            "Send Command to Player"    { channel="panasonicbr:player:myplayer1:button" }
 String Player_Play_Mode         "Status: [%s]"              { channel="panasonicbr:player:myplayer1:play_mode" }
 Number:Time Player_Time_Elapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:time_elapsed" }
+// The following three channels are not available on UHD players
 Number:Time Player_Time_Total "Total Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:time_total" }
 Number Player_Chapter_Current "Current Chapter: [%d]" { channel="panasonicbr:player:myplayer1:chapter_current" }
 Number Player_Chapter_Total "Total Chapters: [%d]" { channel="panasonicbr:player:myplayer1:chapter_total" }
@@ -205,6 +206,7 @@ sitemap panasonicbr label="Panasonic" {
         Selection item=Player_Button
         Text item=Player_Play_Mode
         Text item=Player_Time_Elapsed
+        // The following three channels are not available on UHD players
         Text item=Player_Time_Total
         Text item=Player_Chapter_Current
         Text item=Player_Chapter_Total
