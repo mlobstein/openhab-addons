@@ -19,6 +19,7 @@ import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.TimeUnit;
@@ -34,6 +35,7 @@ import org.openhab.binding.miio.internal.MiIoQuantiyTypes;
 import org.openhab.binding.miio.internal.MiIoSendCommand;
 import org.openhab.binding.miio.internal.Utils;
 import org.openhab.binding.miio.internal.basic.ActionConditions;
+import org.openhab.binding.miio.internal.basic.BasicChannelTypeProvider;
 import org.openhab.binding.miio.internal.basic.CommandParameterType;
 import org.openhab.binding.miio.internal.basic.Conversions;
 import org.openhab.binding.miio.internal.basic.MiIoBasicChannel;
@@ -51,7 +53,7 @@ import org.openhab.core.library.types.PercentType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.library.unit.SIUnits;
-import org.openhab.core.library.unit.SmartHomeUnits;
+import org.openhab.core.library.unit.Units;
 import org.openhab.core.thing.Channel;
 import org.openhab.core.thing.ChannelUID;
 import org.openhab.core.thing.Thing;
@@ -95,11 +97,14 @@ public class MiIoBasicHandler extends MiIoAbstractHandler {
     private @Nullable MiIoBasicDevice miioDevice;
     private Map<ChannelUID, MiIoBasicChannel> actions = new HashMap<>();
     private ChannelTypeRegistry channelTypeRegistry;
+    private BasicChannelTypeProvider basicChannelTypeProvider;
 
     public MiIoBasicHandler(Thing thing, MiIoDatabaseWatchService miIoDatabaseWatchService,
-            CloudConnector cloudConnector, ChannelTypeRegistry channelTypeRegistry) {
+            CloudConnector cloudConnector, ChannelTypeRegistry channelTypeRegistry,
+            BasicChannelTypeProvider basicChannelTypeProvider) {
         super(thing, miIoDatabaseWatchService, cloudConnector);
         this.channelTypeRegistry = channelTypeRegistry;
+        this.basicChannelTypeProvider = basicChannelTypeProvider;
     }
 
     @Override
@@ -259,7 +264,7 @@ public class MiIoBasicHandler extends MiIoAbstractHandler {
                 updateData();
             }, 3000, TimeUnit.MILLISECONDS);
         } else {
-            logger.debug("Actions not loaded yet");
+            logger.debug("Actions not loaded yet, or none available");
         }
     }
 
@@ -406,11 +411,18 @@ public class MiIoBasicHandler extends MiIoAbstractHandler {
             actions = new HashMap<>();
             final MiIoBasicDevice device = this.miioDevice;
             if (device != null) {
+                for (Channel cn : getThing().getChannels()) {
+                    logger.trace("Channel '{}' for thing {} already exist... removing", cn.getUID(),
+                            getThing().getUID());
+                    if (!PERSISTENT_CHANNELS.contains(cn.getUID().getId().toString())) {
+                        thingBuilder.withoutChannels(cn);
+                    }
+                }
                 for (MiIoBasicChannel miChannel : device.getDevice().getChannels()) {
                     logger.debug("properties {}", miChannel);
                     if (!miChannel.getType().isEmpty()) {
-                        ChannelUID channelUID = addChannel(thingBuilder, miChannel.getChannel(),
-                                miChannel.getChannelType(), miChannel.getType(), miChannel.getFriendlyName());
+                        basicChannelTypeProvider.addChannelType(miChannel, deviceName);
+                        ChannelUID channelUID = addChannel(thingBuilder, miChannel, deviceName);
                         if (channelUID != null) {
                             actions.put(channelUID, miChannel);
                             channelsAdded++;
@@ -440,37 +452,39 @@ public class MiIoBasicHandler extends MiIoAbstractHandler {
         return false;
     }
 
-    private @Nullable ChannelUID addChannel(ThingBuilder thingBuilder, @Nullable String channel, String channelType,
-            @Nullable String datatype, String friendlyName) {
-        if (channel == null || channel.isEmpty() || datatype == null || datatype.isEmpty()) {
+    private @Nullable ChannelUID addChannel(ThingBuilder thingBuilder, MiIoBasicChannel miChannel, String model) {
+        String channel = miChannel.getChannel();
+        String dataType = miChannel.getType();
+        if (channel.isEmpty() || dataType.isEmpty()) {
             logger.info("Channel '{}', UID '{}' cannot be added incorrectly configured database. ", channel,
                     getThing().getUID());
             return null;
         }
         ChannelUID channelUID = new ChannelUID(getThing().getUID(), channel);
-
-        // TODO: Need to understand if this harms anything. If yes, channel only to be added when not there already.
-        // current way allows to have no issues when channels are changing.
-        if (getThing().getChannel(channel) != null) {
-            logger.info("Channel '{}' for thing {} already exist... removing", channel, getThing().getUID());
-            thingBuilder.withoutChannel(new ChannelUID(getThing().getUID(), channel));
-        }
-        ChannelBuilder newChannel = ChannelBuilder.create(channelUID, datatype).withLabel(friendlyName);
-        boolean useGenericChannelType = false;
-        if (!channelType.isBlank()) {
-            ChannelTypeUID channelTypeUID = new ChannelTypeUID(channelType);
+        ChannelBuilder newChannel = ChannelBuilder.create(channelUID, dataType).withLabel(miChannel.getFriendlyName());
+        boolean useGeneratedChannelType = false;
+        if (!miChannel.getChannelType().isBlank()) {
+            ChannelTypeUID channelTypeUID = new ChannelTypeUID(miChannel.getChannelType());
             if (channelTypeRegistry.getChannelType(channelTypeUID) != null) {
                 newChannel = newChannel.withType(channelTypeUID);
+                final LinkedHashSet<String> tags = miChannel.getTags();
+                if (tags != null && tags.size() > 0) {
+                    newChannel.withDefaultTags(tags);
+                }
             } else {
-                logger.debug("ChannelType '{}' is not available. Check the Json file for {}", channelTypeUID,
-                        getThing().getUID());
-                useGenericChannelType = true;
+                logger.debug("ChannelType '{}' is not available. Check the Json file for {}", channelTypeUID, model);
+                useGeneratedChannelType = true;
             }
         } else {
-            useGenericChannelType = true;
+            useGeneratedChannelType = true;
         }
-        if (useGenericChannelType) {
-            newChannel = newChannel.withType(new ChannelTypeUID(BINDING_ID, datatype.toLowerCase()));
+        if (useGeneratedChannelType) {
+            newChannel = newChannel
+                    .withType(new ChannelTypeUID(BINDING_ID, model.toUpperCase().replace(".", "_") + "_" + channel));
+            final LinkedHashSet<String> tags = miChannel.getTags();
+            if (tags != null && tags.size() > 0) {
+                newChannel.withDefaultTags(tags);
+            }
         }
         thingBuilder.withChannel(newChannel.build());
         return channelUID;
@@ -592,14 +606,13 @@ public class MiIoBasicHandler extends MiIoAbstractHandler {
                 updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), SIUnits.CELSIUS));
                 break;
             case "electriccurrent":
-                updateState(basicChannel.getChannel(),
-                        new QuantityType<>(val.getAsBigDecimal(), SmartHomeUnits.AMPERE));
+                updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), Units.AMPERE));
                 break;
             case "energy":
-                updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), SmartHomeUnits.WATT));
+                updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), Units.WATT));
                 break;
             case "time":
-                updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), SmartHomeUnits.HOUR));
+                updateState(basicChannel.getChannel(), new QuantityType<>(val.getAsBigDecimal(), Units.HOUR));
                 break;
             default:
                 updateState(basicChannel.getChannel(), new DecimalType(val.getAsBigDecimal()));

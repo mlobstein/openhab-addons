@@ -13,6 +13,7 @@
 package org.openhab.binding.miio.internal;
 
 import java.util.Arrays;
+import java.util.HashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
 
@@ -22,7 +23,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.core.library.unit.ImperialUnits;
 import org.openhab.core.library.unit.SIUnits;
-import org.openhab.core.library.unit.SmartHomeUnits;
+import org.openhab.core.library.unit.Units;
 
 /**
  * Enum of the units used in the miio protocol
@@ -33,31 +34,50 @@ import org.openhab.core.library.unit.SmartHomeUnits;
 @NonNullByDefault
 public enum MiIoQuantiyTypes {
 
-    CELCIUS(SIUnits.CELSIUS),
+    CELCIUS(SIUnits.CELSIUS, "C"),
     FAHRENHEIT(ImperialUnits.FAHRENHEIT),
-    SECOND(SmartHomeUnits.SECOND),
-    MINUTE(SmartHomeUnits.MINUTE),
-    HOUR(SmartHomeUnits.HOUR),
-    SECONDS(SmartHomeUnits.SECOND),
-    MINUTES(SmartHomeUnits.MINUTE),
-    HOURS(SmartHomeUnits.HOUR),
-    AMPERE(SmartHomeUnits.AMPERE),
-    WATT(SmartHomeUnits.WATT);
+    SECOND(Units.SECOND, "seconds"),
+    MINUTE(Units.MINUTE, "minutes"),
+    HOUR(Units.HOUR, "hours"),
+    AMPERE(Units.AMPERE),
+    WATT(Units.WATT),
+    SQUARE_METRE(SIUnits.SQUARE_METRE, "square_meter", "squaremeter"),
+    PERCENT(Units.PERCENT);
 
     private final Unit<?> unit;
+    private final String[] aliasses;
 
     private static Map<String, Unit<?>> stringMap = Arrays.stream(values())
             .collect(Collectors.toMap(Enum::toString, MiIoQuantiyTypes::getUnit));
 
-    private MiIoQuantiyTypes(Unit<?> unit) {
+    private static Map<String, Unit<?>> aliasMap() {
+        Map<String, Unit<?>> aliassesMap = new HashMap<>();
+        for (MiIoQuantiyTypes miIoQuantiyType : values()) {
+            for (String alias : miIoQuantiyType.getAliasses()) {
+                aliassesMap.put(alias.toLowerCase(), miIoQuantiyType.getUnit());
+            }
+        }
+        return aliassesMap;
+    }
+
+    private MiIoQuantiyTypes(Unit<?> unit, String... aliasses) {
         this.unit = unit;
+        this.aliasses = aliasses;
     }
 
     public Unit<?> getUnit() {
         return unit;
     }
 
+    public String[] getAliasses() {
+        return aliasses;
+    }
+
     public static @Nullable Unit<?> get(String unitName) {
-        return stringMap.get(unitName.toUpperCase());
+        Unit<?> unit = stringMap.get(unitName.toUpperCase());
+        if (unit == null) {
+            unit = aliasMap().get(unitName.toLowerCase());
+        }
+        return unit;
     }
 }
