@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2021 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -58,24 +58,6 @@ import org.slf4j.LoggerFactory;
 public class PanasonicHandler extends BaseThingHandler {
     private static final int DEFAULT_REFRESH_PERIOD_SEC = 10;
 
-    // pre-define the POST body for status update calls
-    private static final Fields PST_POST_CMD = new Fields();
-    static {
-        PST_POST_CMD.add("cCMD_PST.x", "100");
-        PST_POST_CMD.add("cCMD_PST.y", "100");
-    }
-
-    private static final Fields STATUS_POST_CMD = new Fields();
-    static {
-        STATUS_POST_CMD.add("cCMD_GET_STATUS.x", "100");
-        STATUS_POST_CMD.add("cCMD_GET_STATUS.y", "100");
-    }
-
-    private static final Fields GET_NONCE_CMD = new Fields();
-    static {
-        GET_NONCE_CMD.add("SID", "1234ABCD");
-    }
-
     private final Logger logger = LoggerFactory.getLogger(PanasonicHandler.class);
     private final HttpClient httpClient;
 
@@ -84,9 +66,9 @@ public class PanasonicHandler extends BaseThingHandler {
     private String urlStr = "http://%host%/WAN/dvdr/dvdr_ctrl.cgi";
     private String nonceUrlStr = "http://%host%/cgi-bin/get_nonce.cgi";
     private int refreshInterval = DEFAULT_REFRESH_PERIOD_SEC;
-    private String playMode = "";
-    private String timeCode = "0";
-    private String playerKey = "";
+    private String playMode = EMPTY;
+    private String timeCode = ZERO;
+    private String playerKey = EMPTY;
     private boolean authEnabled = false;
     private Object sequenceLock = new Object();
     private ThingTypeUID thingTypeUID = THING_TYPE_BD_PLAYER;
@@ -106,7 +88,7 @@ public class PanasonicHandler extends BaseThingHandler {
         final @Nullable String host = config.hostName;
         final @Nullable String playerKey = config.playerKey;
 
-        if (host != null && !host.equals("")) {
+        if (host != null && !EMPTY.equals(host)) {
             urlStr = urlStr.replace("%host%", host);
             nonceUrlStr = nonceUrlStr.replace("%host%", host);
         } else {
@@ -114,13 +96,14 @@ public class PanasonicHandler extends BaseThingHandler {
             return;
         }
 
-        if (playerKey != null && !playerKey.equals("")) {
+        if (playerKey != null && !EMPTY.equals(playerKey)) {
             this.playerKey = playerKey;
             authEnabled = true;
         }
 
-        if (config.refresh >= 10)
+        if (config.refresh >= 10) {
             refreshInterval = config.refresh;
+        }
 
         updateStatus(ThingStatus.UNKNOWN);
         startAutomaticRefresh();
@@ -132,64 +115,69 @@ public class PanasonicHandler extends BaseThingHandler {
     private void startAutomaticRefresh() {
         ScheduledFuture<?> refreshJob = this.refreshJob;
         if (refreshJob == null || refreshJob.isCancelled()) {
-            Runnable runnable = () -> {
-                final String[] statusLines = sendCommand(null, PST_POST_CMD, urlStr, false).split(CRLF);
+            this.refreshJob = scheduler.scheduleWithFixedDelay(this::refreshPlayerStatus, 0, refreshInterval,
+                    TimeUnit.SECONDS);
+        }
+    }
 
-                // a valid response will have at least two lines
-                if (statusLines.length >= 2) {
-                    updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
+    /**
+     * Sends commands to the player to get status information and updates the channels
+     */
+    private void refreshPlayerStatus() {
+        final String[] statusLines = sendCommand(PST_POST_CMD, urlStr).split(CRLF);
 
-                    // statusLines second line: 1,1543,0,00000000 (play mode, current time, ?, ?)
-                    final String statusArr[] = statusLines[1].split(COMMA);
+        // a valid response will have at least two lines
+        if (statusLines.length >= 2) {
+            updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
 
-                    if (statusArr.length >= 2) {
-                        // update play mode if different
-                        if (!playMode.equals(statusArr[0])) {
-                            playMode = statusArr[0];
+            // statusLines second line: 1,1543,0,00000000 (play mode, current time, ?, ?)
+            final String statusArr[] = statusLines[1].split(COMMA);
 
-                            switch (playMode) {
-                                case ZERO:
-                                    updateState(PLAY_MODE, new StringType(STOP));
-                                    updateState(TIME_ELAPSED, UnDefType.UNDEF);
-                                    updateState(TIME_TOTAL, UnDefType.UNDEF);
-                                    updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
-                                    updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
-                                    // update cached time code with current time code so update below will not occur
-                                    // necessary because the player does not clear reported time code when stopped
-                                    timeCode = statusArr[1];
-                                    break;
-                                case ONE:
-                                    updateState(PLAY_MODE, new StringType(PLAY));
-                                    break;
-                                case TWO:
-                                    updateState(PLAY_MODE, new StringType(PAUSE));
-                                    break;
-                                default:
-                                    logger.debug("Unknown playMode type: {}", playMode);
-                                    updateState(PLAY_MODE, new StringType(UNKNOWN));
-                                    updateState(TIME_ELAPSED, UnDefType.UNDEF);
-                                    updateState(TIME_TOTAL, UnDefType.UNDEF);
-                                    updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
-                                    updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
-                                    return;
-                            }
-                        }
+            if (statusArr.length >= 2) {
+                // update play mode if different
+                if (!playMode.equals(statusArr[0])) {
+                    playMode = statusArr[0];
 
-                        // update time code and playback status if time code changes
-                        // it stops changing when paused or stopped, preventing the second http call running needlessly
-                        if (!timeCode.equals(statusArr[1])) {
+                    switch (playMode) {
+                        case ZERO:
+                            updateState(PLAY_MODE, new StringType(STOP));
+                            updateState(TIME_ELAPSED, UnDefType.UNDEF);
+                            updateState(TIME_TOTAL, UnDefType.UNDEF);
+                            updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
+                            updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
+                            // update cached time code with current time code so update below will not occur
+                            // necessary because the player does not clear reported time code when stopped
                             timeCode = statusArr[1];
-                            updateState(TIME_ELAPSED, new QuantityType<>(Integer.parseInt(timeCode), API_SECONDS_UNIT));
-
-                            // UHD players do not provide extended playback info
-                            if (thingTypeUID.equals(THING_TYPE_BD_PLAYER)) {
-                                updatePlaybackStatus();
-                            }
-                        }
+                            break;
+                        case ONE:
+                            updateState(PLAY_MODE, new StringType(PLAY));
+                            break;
+                        case TWO:
+                            updateState(PLAY_MODE, new StringType(PAUSE));
+                            break;
+                        default:
+                            logger.debug("Unknown playMode type: {}", playMode);
+                            updateState(PLAY_MODE, new StringType(UNKNOWN));
+                            updateState(TIME_ELAPSED, UnDefType.UNDEF);
+                            updateState(TIME_TOTAL, UnDefType.UNDEF);
+                            updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
+                            updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
+                            return;
                     }
                 }
-            };
-            this.refreshJob = scheduler.scheduleWithFixedDelay(runnable, 0, refreshInterval, TimeUnit.SECONDS);
+
+                // update time code and playback status if time code changes
+                // it stops changing when paused or stopped, preventing the second http call running needlessly
+                if (!timeCode.equals(statusArr[1])) {
+                    timeCode = statusArr[1];
+                    updateState(TIME_ELAPSED, new QuantityType<>(Integer.parseInt(timeCode), API_SECONDS_UNIT));
+
+                    // UHD players do not provide extended playback info
+                    if (thingTypeUID.equals(THING_TYPE_BD_PLAYER)) {
+                        updatePlaybackStatus();
+                    }
+                }
+            }
         }
     }
 
@@ -207,74 +195,82 @@ public class PanasonicHandler extends BaseThingHandler {
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
-            logger.debug("Unsupported refresh command: {}", command.toString());
+            logger.debug("Unsupported refresh command: {}", command);
         } else if (channelUID.getId().equals(BUTTON)) {
             synchronized (sequenceLock) {
-                sendCommand(command.toString(), null, urlStr, authEnabled);
+                sendCommand(command.toString(), urlStr, authEnabled);
             }
         } else {
-            logger.debug("Unsupported command: {}", command.toString());
+            logger.debug("Unsupported command: {}", command);
         }
     }
 
     /**
-     * Sends a command to the player (must send command string or pre-built post body, not both)
+     * Sends a command to the player by building a POST with the command string embedded
      *
      * @param String the command to be sent to the player
-     * @param Fields a pre-built post body to send to the player
      * @param String the url to receive the command
      * @param boolan a flag to indicate if authentication should be used for the command
      * @return the response string from the player
      */
-    private String sendCommand(@Nullable String command, @Nullable Fields fields, String url, Boolean isAuth) {
-        String output = "";
-        String authKey = "";
-
+    private String sendCommand(String command, String url, Boolean isAuth) {
+        String authKey = EMPTY;
         if (isAuth) {
-            String nonce = sendCommand(null, GET_NONCE_CMD, nonceUrlStr, false).trim();
+            String nonce = sendCommand(GET_NONCE_CMD, nonceUrlStr).trim();
             try {
                 authKey = getAuthKey(playerKey + nonce);
             } catch (NoSuchAlgorithmException e) {
                 logger.debug("Error creating auth key: {}", e.getMessage());
-                return "";
+                return EMPTY;
             }
         }
 
-        // if we were not sent the fields to post, build them from the string
-        if (fields == null) {
-            fields = new Fields();
-            fields.add("cCMD_" + command + ".x", "100");
-            fields.add("cCMD_" + command + ".y", "100");
-            if (isAuth) {
-                fields.add("cAUTH_FORM", "C4");
-                fields.add("cAUTH_VALUE", authKey);
-            }
+        // build the fields to POST from the command string
+        Fields fields = new Fields();
+        fields.add("cCMD_" + command + ".x", "100");
+        fields.add("cCMD_" + command + ".y", "100");
+        if (isAuth) {
+            fields.add("cAUTH_FORM", "C4");
+            fields.add("cAUTH_VALUE", authKey);
         }
-        logger.debug("Blu-ray command: {}", command != null ? command : fields.getNames().iterator().next());
+        return sendCommand(fields, url);
+    }
+
+    /**
+     * Sends a command to the player using a pre-built post body
+     *
+     * @param Fields a pre-built post body to send to the player
+     * @param String the url to receive the command
+     * @return the response string from the player
+     */
+    private String sendCommand(Fields fields, String url) {
+        logger.debug("Blu-ray command: {}", fields.getNames().iterator().next());
 
         try {
             ContentResponse response = httpClient.POST(url).agent(USER_AGENT).method(HttpMethod.POST)
                     .content(new FormContentProvider(fields)).send();
 
-            output = response.getContentAsString();
+            String output = response.getContentAsString();
             logger.debug("Blu-ray response: {}", output);
 
             if (response.getStatus() != OK_200) {
                 throw new PanasonicHttpException("Player response: " + response.getStatus() + " - " + output);
             }
+            return output;
 
         } catch (PanasonicHttpException | InterruptedException | TimeoutException | ExecutionException e) {
-            logger.debug("Error executing player command: {}, {}", command, e.getMessage());
+            logger.debug("Error executing player command: {}, {}", fields.getNames().iterator().next(), e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.OFFLINE.COMMUNICATION_ERROR,
                     "Error communicating with the player");
         }
-
-        return output;
+        return EMPTY;
     }
 
-    // secondary call to get additional playback status info
+    /**
+     * Secondary call to get additional playback status info
+     */
     private void updatePlaybackStatus() {
-        final String[] statusLines = sendCommand(null, STATUS_POST_CMD, urlStr, false).split(CRLF);
+        final String[] statusLines = sendCommand(STATUS_POST_CMD, urlStr).split(CRLF);
 
         // get the second line of the status message
         // 1,0,0,1,5999,61440,500,1,16,00000000 (?, ?, ?, cur time, total time, title#?, ?, chapt #, total chapt, ?)
@@ -288,7 +284,13 @@ public class PanasonicHandler extends BaseThingHandler {
         }
     }
 
-    String getAuthKey(String input) throws NoSuchAlgorithmException {
+    /**
+     * Returns a SHA-256 hash of the input string
+     *
+     * @param String the input string to generate the hash from
+     * @return the 256 bit hash string
+     */
+    private String getAuthKey(String input) throws NoSuchAlgorithmException {
         MessageDigest md = MessageDigest.getInstance(SHA_256_ALGORITHM);
         byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
         byte[] hash = md.digest(inputBytes);

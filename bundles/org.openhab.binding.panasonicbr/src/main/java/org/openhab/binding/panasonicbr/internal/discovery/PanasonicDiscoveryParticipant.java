@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2020 Contributors to the openHAB project
+ * Copyright (c) 2010-2021 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,6 +12,8 @@
  */
 package org.openhab.binding.panasonicbr.internal.discovery;
 
+import static org.openhab.binding.panasonicbr.internal.PanasonicBindingConstants.*;
+
 import java.net.URL;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -22,7 +24,6 @@ import java.util.Set;
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.jupnp.model.meta.RemoteDevice;
-import org.openhab.binding.panasonicbr.internal.PanasonicBindingConstants;
 import org.openhab.core.config.discovery.DiscoveryResult;
 import org.openhab.core.config.discovery.DiscoveryResultBuilder;
 import org.openhab.core.config.discovery.upnp.UpnpDiscoveryParticipant;
@@ -51,7 +52,7 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
 
     @Override
     public Set<ThingTypeUID> getSupportedThingTypeUIDs() {
-        return PanasonicBindingConstants.SUPPORTED_THING_TYPES_UIDS;
+        return SUPPORTED_THING_TYPES_UIDS;
     }
 
     @Override
@@ -84,7 +85,7 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
                     device.getDetails().getModelDetails().getModelNumber());
             if (device.getDetails().getManufacturerDetails().getManufacturer().toLowerCase().startsWith(MANUFACTURER)) {
                 logger.debug("Panasonic Blu-ray Player Found at {}", device.getIdentity().getDescriptorURL().getHost());
-                String id = device.getIdentity().getUdn().getIdentifierString().replaceAll(":", "").toUpperCase();
+                String id = device.getIdentity().getUdn().getIdentifierString().replaceAll(":", EMPTY).toUpperCase();
 
                 boolean foundMatch = MODELS.stream().anyMatch(model -> (device.getDetails().getModelDetails()
                         .getModelNumber().toUpperCase().contains(model)));
@@ -94,9 +95,9 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
                         if (!device.getType().getType().equals("Basic")) {
                             return null;
                         }
-                        return new ThingUID(PanasonicBindingConstants.THING_TYPE_UHD_PLAYER, id);
+                        return new ThingUID(THING_TYPE_UHD_PLAYER, id);
                     } else {
-                        return new ThingUID(PanasonicBindingConstants.THING_TYPE_BD_PLAYER, id);
+                        return new ThingUID(THING_TYPE_BD_PLAYER, id);
                     }
                 }
             }

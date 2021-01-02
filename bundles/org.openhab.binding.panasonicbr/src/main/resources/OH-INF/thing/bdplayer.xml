@@ -13,11 +13,11 @@
 
 		<channels>
 			<channel id="button" typeId="button"/>
-			<channel id="play_mode" typeId="play_mode"/>
-			<channel id="time_elapsed" typeId="time_elapsed"/>
-			<channel id="time_total" typeId="time_total"/>
-			<channel id="chapter_current" typeId="chapter_current"/>
-			<channel id="chapter_total" typeId="chapter_total"/>
+			<channel id="playMode" typeId="playMode"/>
+			<channel id="timeElapsed" typeId="timeElapsed"/>
+			<channel id="timeTotal" typeId="timeTotal"/>
+			<channel id="chapterCurrent" typeId="chapterCurrent"/>
+			<channel id="chapterTotal" typeId="chapterTotal"/>
 		</channels>
 
 		<config-description>
@@ -93,35 +93,35 @@
 		</state>
 	</channel-type>
 
-	<channel-type id="play_mode">
+	<channel-type id="playMode">
 		<item-type>String</item-type>
 		<label>Play Mode</label>
 		<description>The Current Playback Mode</description>
 		<state readOnly="true"/>
 	</channel-type>
 
-	<channel-type id="time_elapsed">
+	<channel-type id="timeElapsed">
 		<item-type>Number:Time</item-type>
 		<label>Playback Time</label>
 		<description>The Current Playback Time Elapsed</description>
 		<state readOnly="true" pattern="%d %unit%"/>
 	</channel-type>
 
-	<channel-type id="time_total">
+	<channel-type id="timeTotal">
 		<item-type>Number:Time</item-type>
 		<label>Total Time</label>
 		<description>The Total Length of the Current Title</description>
 		<state readOnly="true" pattern="%d %unit%"/>
 	</channel-type>
 
-	<channel-type id="chapter_current">
+	<channel-type id="chapterCurrent">
 		<item-type>Number</item-type>
 		<label>Current Chaper</label>
 		<description>The Current Chapter Number</description>
 		<state readOnly="true" pattern="%d"/>
 	</channel-type>
 
-	<channel-type id="chapter_total">
+	<channel-type id="chapterTotal">
 		<item-type>Number</item-type>
 		<label>Total Chapters</label>
 		<description>The Total Number of Chapters in the Current Title</description>

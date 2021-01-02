@@ -167,14 +167,14 @@ High Clarity:  RC_HIGHCLARITY
 
 The following channels are available:
 
-| Channel ID      | Item Type   | Description                                                                            |
-|-----------------|-------------|----------------------------------------------------------------------------------------|
-| button          | String      | Sends a remote command to control the player. See list of available commands above.    |
-| play_mode       | String      | The current playback mode ie: STOP, PLAY, PAUSE (ReadOnly)                             |
-| time_elapsed    | Number:Time | The total number of seconds of playback time elapsed (ReadOnly)                        |
-| time_total      | Number:Time | The total length of the current playing title in seconds (ReadOnly) Not on UHD players |
-| chapter_current | Number      | The current chapter number (ReadOnly) Not on UHD players                               |
-| chapter_total   | Number      | The total number of chapters in the current title (ReadOnly) Not on UHD players        |
+| Channel ID     | Item Type   | Description                                                                            |
+|----------------|-------------|----------------------------------------------------------------------------------------|
+| button         | String      | Sends a remote command to control the player. See list of available commands above.    |
+| playMode       | String      | The current playback mode ie: STOP, PLAY, PAUSE (ReadOnly)                             |
+| timeElapsed    | Number:Time | The total number of seconds of playback time elapsed (ReadOnly)                        |
+| timeTotal      | Number:Time | The total length of the current playing title in seconds (ReadOnly) Not on UHD players |
+| chapterCurrent | Number      | The current chapter number (ReadOnly) Not on UHD players                               |
+| chapterTotal   | Number      | The total number of chapters in the current title (ReadOnly) Not on UHD players        |
 
 ## Full Example
 
@@ -188,13 +188,13 @@ panasonicbr:uhd_player:myplayer1 "My UHD Blu-ray player" [ hostName="192.168.10.
 panasonicbr.items:
 
 ```java
-String Player_Button            "Send Command to Player"    { channel="panasonicbr:player:myplayer1:button" }
-String Player_Play_Mode         "Status: [%s]"              { channel="panasonicbr:player:myplayer1:play_mode" }
-Number:Time Player_Time_Elapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:time_elapsed" }
+String Player_Button           "Send Command to Player"    { channel="panasonicbr:player:myplayer1:button" }
+String Player_PlayMode         "Status: [%s]"              { channel="panasonicbr:player:myplayer1:playMode" }
+Number:Time Player_TimeElapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:timeElapsed" }
 // The following three channels are not available on UHD players
-Number:Time Player_Time_Total "Total Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:time_total" }
-Number Player_Chapter_Current "Current Chapter: [%d]" { channel="panasonicbr:player:myplayer1:chapter_current" }
-Number Player_Chapter_Total "Total Chapters: [%d]" { channel="panasonicbr:player:myplayer1:chapter_total" }
+Number:Time Player_TimeTotal "Total Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:timeTotal" }
+Number Player_ChapterCurrent "Current Chapter: [%d]" { channel="panasonicbr:player:myplayer1:chapterCurrent" }
+Number Player_ChapterTotal "Total Chapters: [%d]" { channel="panasonicbr:player:myplayer1:chapterTotal" }
 
 ```
 
@@ -204,12 +204,12 @@ panasonicbr.sitemap:
 sitemap panasonicbr label="Panasonic" {
     Frame label="My Blu-ray Player" {
         Selection item=Player_Button
-        Text item=Player_Play_Mode
-        Text item=Player_Time_Elapsed
+        Text item=Player_PlayMode
+        Text item=Player_TimeElapsed
         // The following three channels are not available on UHD players
-        Text item=Player_Time_Total
-        Text item=Player_Chapter_Current
-        Text item=Player_Chapter_Total
+        Text item=Player_TimeTotal
+        Text item=Player_ChapterCurrent
+        Text item=Player_ChapterTotal
     }
 }
 ```
