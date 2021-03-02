@@ -198,42 +198,30 @@ public class PanasonicHandler extends BaseThingHandler {
             logger.debug("Unsupported refresh command: {}", command);
         } else if (channelUID.getId().equals(BUTTON)) {
             synchronized (sequenceLock) {
-                sendCommand(command.toString(), urlStr, authEnabled);
+                String authKey = EMPTY;
+                if (authEnabled) {
+                    String nonce = sendCommand(GET_NONCE_CMD, nonceUrlStr).trim();
+                    try {
+                        authKey = getAuthKey(playerKey + nonce);
+                    } catch (NoSuchAlgorithmException e) {
+                        logger.debug("Error creating auth key: {}", e.getMessage());
+                        return;
+                    }
+                }
+
+                // build the fields to POST from the command string
+                Fields fields = new Fields();
+                fields.add("cCMD_" + command + ".x", "100");
+                fields.add("cCMD_" + command + ".y", "100");
+                if (authEnabled) {
+                    fields.add("cAUTH_FORM", "C4");
+                    fields.add("cAUTH_VALUE", authKey);
+                }
+                sendCommand(fields, urlStr);
             }
         } else {
             logger.debug("Unsupported command: {}", command);
         }
-    }
-
-    /**
-     * Sends a command to the player by building a POST with the command string embedded
-     *
-     * @param String the command to be sent to the player
-     * @param String the url to receive the command
-     * @param boolan a flag to indicate if authentication should be used for the command
-     * @return the response string from the player
-     */
-    private String sendCommand(String command, String url, Boolean isAuth) {
-        String authKey = EMPTY;
-        if (isAuth) {
-            String nonce = sendCommand(GET_NONCE_CMD, nonceUrlStr).trim();
-            try {
-                authKey = getAuthKey(playerKey + nonce);
-            } catch (NoSuchAlgorithmException e) {
-                logger.debug("Error creating auth key: {}", e.getMessage());
-                return EMPTY;
-            }
-        }
-
-        // build the fields to POST from the command string
-        Fields fields = new Fields();
-        fields.add("cCMD_" + command + ".x", "100");
-        fields.add("cCMD_" + command + ".y", "100");
-        if (isAuth) {
-            fields.add("cAUTH_FORM", "C4");
-            fields.add("cAUTH_VALUE", authKey);
-        }
-        return sendCommand(fields, url);
     }
 
     /**
