@@ -12,8 +12,9 @@
 		</description>
 
 		<channels>
+			<channel id="power" typeId="system.power"/>
 			<channel id="button" typeId="button"/>
-			<channel id="playMode" typeId="playMode"/>
+			<channel id="playerStatus" typeId="playerStatus"/>
 			<channel id="timeElapsed" typeId="timeElapsed"/>
 			<channel id="timeTotal" typeId="timeTotal"/>
 			<channel id="chapterCurrent" typeId="chapterCurrent"/>
@@ -24,12 +25,12 @@
 			<parameter name="hostName" type="text" required="true">
 				<context>network-address</context>
 				<label>Player Host Name/IP Address</label>
-				<description>Host Name or IP Address of the Player</description>
+				<description>Host Name or IP Address of the player</description>
 			</parameter>
-			<parameter name="refresh" type="integer" min="10" required="false" unit="s">
+			<parameter name="refresh" type="integer" min="5" required="false" unit="s">
 				<label>Refresh Interval</label>
-				<description>Specifies the Refresh Interval in Seconds</description>
-				<default>10</default>
+				<description>Specifies the refresh interval in seconds</description>
+				<default>5</default>
 				<unitLabel>s</unitLabel>
 			</parameter>
 		</config-description>
@@ -38,10 +39,12 @@
 	<channel-type id="button">
 		<item-type>String</item-type>
 		<label>Remote Button</label>
-		<description>A Remote Button Press to Send to The Player</description>
+		<description>A remote button press to send to the player</description>
 		<state>
 			<options>
-				<option value="RC_POWER">Power</option>
+				<option value="RC_POWERON">Power On</option>
+				<option value="RC_POWEROFF">Power Off</option>
+				<option value="RC_POWER">Power Toggle</option>
 				<option value="RC_OP_CL">Open/Close</option>
 				<option value="RC_D1">1</option>
 				<option value="RC_D2">2</option>
@@ -73,7 +76,7 @@
 				<option value="RC_TITLE">Top Menu</option>
 				<option value="RC_PUPMENU">Pop-up Menu</option>
 				<option value="RC_V_CAST">Viera Cast</option>
-				<option value="RC_MLTNAV">Home</option>
+				<option value="RC_MLTNAVI">Home</option>
 				<option value="RC_UP">Up</option>
 				<option value="RC_DOWN">Down</option>
 				<option value="RC_LEFT">Left</option>
@@ -93,38 +96,38 @@
 		</state>
 	</channel-type>
 
-	<channel-type id="playMode">
+	<channel-type id="playerStatus">
 		<item-type>String</item-type>
-		<label>Play Mode</label>
-		<description>The Current Playback Mode</description>
+		<label>Player Status</label>
+		<description>The current player status</description>
 		<state readOnly="true"/>
 	</channel-type>
 
 	<channel-type id="timeElapsed">
 		<item-type>Number:Time</item-type>
 		<label>Playback Time</label>
-		<description>The Current Playback Time Elapsed</description>
+		<description>The current playback time elapsed</description>
 		<state readOnly="true" pattern="%d %unit%"/>
 	</channel-type>
 
 	<channel-type id="timeTotal">
 		<item-type>Number:Time</item-type>
 		<label>Total Time</label>
-		<description>The Total Length of the Current Title</description>
+		<description>The total length of the current title</description>
 		<state readOnly="true" pattern="%d %unit%"/>
 	</channel-type>
 
 	<channel-type id="chapterCurrent">
 		<item-type>Number</item-type>
 		<label>Current Chaper</label>
-		<description>The Current Chapter Number</description>
+		<description>The current chapter number</description>
 		<state readOnly="true" pattern="%d"/>
 	</channel-type>
 
 	<channel-type id="chapterTotal">
 		<item-type>Number</item-type>
 		<label>Total Chapters</label>
-		<description>The Total Number of Chapters in the Current Title</description>
+		<description>The total number of chapters in the current title</description>
 		<state readOnly="true" pattern="%d"/>
 	</channel-type>
 

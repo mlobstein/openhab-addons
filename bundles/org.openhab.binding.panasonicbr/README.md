@@ -20,7 +20,7 @@ Then make sure you have the following values set:
 ## Supported Things
 
 There are two supported thing types, which represent either a BD player or a UHD player.
-A supported Blu-ray uses the `bd_player` id and a supported UHD Blu-ray player uses the `uhd_player` id.
+A supported Blu-ray player uses the `bd_player` id and a supported UHD Blu-ray player uses the `uhd_player` id.
 Multiple Things can be added if more than one player is to be controlled.
 
 ## Discovery
@@ -52,6 +52,8 @@ Some notes:
 **List of available button commands for BD players:**  
 
 Button: (Command)  
+Power ON:  RC_POWERON  
+Power Off:  RC_POWEROFF  
 Power Toggle:  RC_POWER  
 Open/Close:  RC_OP_CL  
 1 (@.):  RC_D1  
@@ -167,44 +169,51 @@ High Clarity:  RC_HIGHCLARITY
 
 The following channels are available:
 
-| Channel ID     | Item Type   | Description                                                                            |
-|----------------|-------------|----------------------------------------------------------------------------------------|
-| button         | String      | Sends a remote command to control the player. See list of available commands above.    |
-| playMode       | String      | The current playback mode ie: STOP, PLAY, PAUSE (ReadOnly)                             |
-| timeElapsed    | Number:Time | The total number of seconds of playback time elapsed (ReadOnly)                        |
-| timeTotal      | Number:Time | The total length of the current playing title in seconds (ReadOnly) Not on UHD players |
-| chapterCurrent | Number      | The current chapter number (ReadOnly) Not on UHD players                               |
-| chapterTotal   | Number      | The total number of chapters in the current title (ReadOnly) Not on UHD players        |
+| Channel ID     | Item Type   | Description                                                                                    |
+|----------------|-------------|------------------------------------------------------------------------------------------------|
+| button         | String      | Sends a remote command to control the player. See list of available commands above.            |
+| playerStatus   | String      | The player status ie: POWER OFF, TRAY OPEN, STOPPED, PLAYBACK, PAUSE PLAYBACK, etc. (ReadOnly) |
+| timeElapsed    | Number:Time | The total number of seconds of playback time elapsed (ReadOnly)                                |
+| timeTotal      | Number:Time | The total length of the current playing title in seconds (ReadOnly) Not on UHD players         |
+| chapterCurrent | Number      | The current chapter number (ReadOnly) Not on UHD players                                       |
+| chapterTotal   | Number      | The total number of chapters in the current title (ReadOnly) Not on UHD players                |
 
 ## Full Example
 
 panasonicbr.things:
 
-```java
-panasonicbr:bd_player:myplayer1 "My Blu-ray player" [ hostName="192.168.10.1", refresh=10 ]
-panasonicbr:uhd_player:myplayer1 "My UHD Blu-ray player" [ hostName="192.168.10.1", refresh=10, playerKey="ABCDEF1234567890abcdef0123456789" ]
+```
+panasonicbr:bd_player:mybdplayer "My Blu-ray player" [ hostName="192.168.10.1", refresh=10 ]
+panasonicbr:uhd_player:myuhdplayer "My UHD Blu-ray player" [ hostName="192.168.10.1", refresh=10, playerKey="ABCDEF1234567890abcdef0123456789" ]
 ```
 
 panasonicbr.items:
 
-```java
-String Player_Button           "Send Command to Player"    { channel="panasonicbr:player:myplayer1:button" }
-String Player_PlayMode         "Status: [%s]"              { channel="panasonicbr:player:myplayer1:playMode" }
-Number:Time Player_TimeElapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:timeElapsed" }
-// The following three channels are not available on UHD players
-Number:Time Player_TimeTotal "Total Time: [%d %unit%]" { channel="panasonicbr:player:myplayer1:timeTotal" }
-Number Player_ChapterCurrent "Current Chapter: [%d]" { channel="panasonicbr:player:myplayer1:chapterCurrent" }
-Number Player_ChapterTotal "Total Chapters: [%d]" { channel="panasonicbr:player:myplayer1:chapterTotal" }
+```
+// BD Player
+Switch Player_Power            "Power"                     { channel="panasonicbr:bd_player:mybdplayer:power" 
+String Player_Button           "Send Command to Player"    { channel="panasonicbr:bd_player:mybdplayer:button" }
+String Player_PlayerStatus     "Status: [%s]"              { channel="panasonicbr:bd_player:mybdplayer:playerStatus" }
+Number:Time Player_TimeElapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:bd_player:mybdplayer:timeElapsed" }
+Number:Time Player_TimeTotal "Total Time: [%d %unit%]" { channel="panasonicbr:bd_player:mybdplayer:timeTotal" }
+Number Player_ChapterCurrent "Current Chapter: [%d]" { channel="panasonicbr:bd_player:mybdplayer:chapterCurrent" }
+Number Player_ChapterTotal "Total Chapters: [%d]" { channel="panasonicbr:bd_player:mybdplayer:chapterTotal" }
 
+// UHD Player
+Switch Player_Power            "Power"                     { channel="panasonicbr:uhd_player:myuhdplayer:power" 
+String Player_Button           "Send Command to Player"    { channel="panasonicbr:uhd_player:myuhdplayer:button" }
+String Player_PlayerStatus     "Status: [%s]"              { channel="panasonicbr:uhd_player:myuhdplayer:playerStatus" }
+Number:Time Player_TimeElapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:uhd_player:myuhdplayer:timeElapsed" }
 ```
 
 panasonicbr.sitemap:
 
-```perl
-sitemap panasonicbr label="Panasonic" {
+```
+sitemap panasonicbr label="Panasonic Blu-ray" {
     Frame label="My Blu-ray Player" {
+        Switch item=Player_Power
         Selection item=Player_Button
-        Text item=Player_PlayMode
+        Text item=Player_PlayerStatus
         Text item=Player_TimeElapsed
         // The following three channels are not available on UHD players
         Text item=Player_TimeTotal

@@ -34,6 +34,7 @@ import org.eclipse.jetty.util.Fields;
 import org.openhab.binding.panasonicbr.internal.PanasonicConfiguration;
 import org.openhab.binding.panasonicbr.internal.PanasonicHttpException;
 import org.openhab.core.library.types.DecimalType;
+import org.openhab.core.library.types.OnOffType;
 import org.openhab.core.library.types.QuantityType;
 import org.openhab.core.library.types.StringType;
 import org.openhab.core.thing.ChannelUID;
@@ -56,7 +57,7 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class PanasonicHandler extends BaseThingHandler {
-    private static final int DEFAULT_REFRESH_PERIOD_SEC = 10;
+    private static final int DEFAULT_REFRESH_PERIOD_SEC = 5;
 
     private final Logger logger = LoggerFactory.getLogger(PanasonicHandler.class);
     private final HttpClient httpClient;
@@ -69,6 +70,7 @@ public class PanasonicHandler extends BaseThingHandler {
     private String playMode = EMPTY;
     private String timeCode = ZERO;
     private String playerKey = EMPTY;
+    private boolean debounce = true;
     private boolean authEnabled = false;
     private Object sequenceLock = new Object();
     private ThingTypeUID thingTypeUID = THING_TYPE_BD_PLAYER;
@@ -101,7 +103,7 @@ public class PanasonicHandler extends BaseThingHandler {
             authEnabled = true;
         }
 
-        if (config.refresh >= 10) {
+        if (config.refresh >= DEFAULT_REFRESH_PERIOD_SEC) {
             refreshInterval = config.refresh;
         }
 
@@ -124,57 +126,71 @@ public class PanasonicHandler extends BaseThingHandler {
      * Sends commands to the player to get status information and updates the channels
      */
     private void refreshPlayerStatus() {
-        final String[] statusLines = sendCommand(PST_POST_CMD, urlStr).split(CRLF);
+        final String[] playerStatus = sendCommand(REVIEW_POST_CMD, urlStr).split(CRLF);
+
+        // Parse the second line of the response, 4th group is the status
+        // F,,,07,00,,8,,,,1,000:00,,05:10,F,FF:FF,0000,0000,0000,0000
+        if (playerStatus.length >= 2) {
+            final String statusArr[] = playerStatus[1].split(COMMA);
+            if (statusArr.length >= 4) {
+                updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
+                updateState(PLAYER_STATUS, new StringType(STATUS_MAP.get(statusArr[3])));
+                if (OFF_STATUS.equals(statusArr[3])) {
+                    if (debounce) {
+                        updateState(POWER, OnOffType.OFF);
+                    }
+                    // When power switched off, let PST_POST_CMD run once more to clear out statuses
+                    if (ZERO.equals(playMode)) {
+                        return;
+                    }
+                } else if (debounce) {
+                    updateState(POWER, OnOffType.ON);
+                }
+                debounce = true;
+            }
+        } else {
+            updateState(PLAYER_STATUS, new StringType(UNKNOWN));
+            updateState(TIME_ELAPSED, UnDefType.UNDEF);
+            updateState(TIME_TOTAL, UnDefType.UNDEF);
+            updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
+            updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
+        }
+
+        final String[] playbackStatus = sendCommand(PST_POST_CMD, urlStr).split(CRLF);
 
         // a valid response will have at least two lines
-        if (statusLines.length >= 2) {
-            updateStatus(ThingStatus.ONLINE, ThingStatusDetail.NONE);
-
-            // statusLines second line: 1,1543,0,00000000 (play mode, current time, ?, ?)
-            final String statusArr[] = statusLines[1].split(COMMA);
+        if (playbackStatus.length >= 2) {
+            // playbackStatus second line: 1,1543,0,00000000 (play mode, current time, ?, ?)
+            final String statusArr[] = playbackStatus[1].split(COMMA);
 
             if (statusArr.length >= 2) {
                 // update play mode if different
                 if (!playMode.equals(statusArr[0])) {
                     playMode = statusArr[0];
 
-                    switch (playMode) {
-                        case ZERO:
-                            updateState(PLAY_MODE, new StringType(STOP));
-                            updateState(TIME_ELAPSED, UnDefType.UNDEF);
-                            updateState(TIME_TOTAL, UnDefType.UNDEF);
-                            updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
-                            updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
-                            // update cached time code with current time code so update below will not occur
-                            // necessary because the player does not clear reported time code when stopped
-                            timeCode = statusArr[1];
-                            break;
-                        case ONE:
-                            updateState(PLAY_MODE, new StringType(PLAY));
-                            break;
-                        case TWO:
-                            updateState(PLAY_MODE, new StringType(PAUSE));
-                            break;
-                        default:
-                            logger.debug("Unknown playMode type: {}", playMode);
-                            updateState(PLAY_MODE, new StringType(UNKNOWN));
-                            updateState(TIME_ELAPSED, UnDefType.UNDEF);
-                            updateState(TIME_TOTAL, UnDefType.UNDEF);
-                            updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
-                            updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
-                            return;
+                    // playback stopped, zero everything out
+                    if (ZERO.equals(playMode)) {
+                        updateState(TIME_ELAPSED, UnDefType.UNDEF);
+                        updateState(TIME_TOTAL, UnDefType.UNDEF);
+                        updateState(CHAPTER_CURRENT, UnDefType.UNDEF);
+                        updateState(CHAPTER_TOTAL, UnDefType.UNDEF);
+                        // update cached time code with current time code so update below will not occur
+                        // necessary because the player does not clear reported time code when stopped
+                        timeCode = statusArr[1];
                     }
                 }
 
                 // update time code and playback status if time code changes
-                // it stops changing when paused or stopped, preventing the second http call running needlessly
+                // it stops changing when paused or stopped, and we then stop running the third http call needlessly
                 if (!timeCode.equals(statusArr[1])) {
                     timeCode = statusArr[1];
-                    updateState(TIME_ELAPSED, new QuantityType<>(Integer.parseInt(timeCode), API_SECONDS_UNIT));
+                    if (Integer.parseInt(timeCode) >= 0) {
+                        updateState(TIME_ELAPSED, new QuantityType<>(Integer.parseInt(timeCode), API_SECONDS_UNIT));
 
-                    // UHD players do not provide extended playback info
-                    if (thingTypeUID.equals(THING_TYPE_BD_PLAYER)) {
-                        updatePlaybackStatus();
+                        // UHD players do not provide extended playback info
+                        if (thingTypeUID.equals(THING_TYPE_BD_PLAYER)) {
+                            updateExtendedStatus();
+                        }
                     }
                 }
             }
@@ -196,7 +212,18 @@ public class PanasonicHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
             logger.debug("Unsupported refresh command: {}", command);
-        } else if (channelUID.getId().equals(BUTTON)) {
+        } else if (channelUID.getId().equals(BUTTON) || channelUID.getId().equals(POWER)) {
+            String commandStr;
+            if (command instanceof OnOffType) {
+                commandStr = "RC_POWER" + command;
+                // If the power is switched on while the polling is running, the switch could bounce back to off,
+                // set this flag to stop the first polling event from changing the state of the switch to give the
+                // player time to start up and report the correct power status on the next poll
+                debounce = false;
+            } else {
+                commandStr = command.toString();
+            }
+
             synchronized (sequenceLock) {
                 String authKey = EMPTY;
                 if (authEnabled) {
@@ -211,8 +238,8 @@ public class PanasonicHandler extends BaseThingHandler {
 
                 // build the fields to POST from the command string
                 Fields fields = new Fields();
-                fields.add("cCMD_" + command + ".x", "100");
-                fields.add("cCMD_" + command + ".y", "100");
+                fields.add("cCMD_" + commandStr + ".x", "100");
+                fields.add("cCMD_" + commandStr + ".y", "100");
                 if (authEnabled) {
                     fields.add("cAUTH_FORM", "C4");
                     fields.add("cAUTH_VALUE", authKey);
@@ -245,7 +272,6 @@ public class PanasonicHandler extends BaseThingHandler {
                 throw new PanasonicHttpException("Player response: " + response.getStatus() + " - " + output);
             }
             return output;
-
         } catch (PanasonicHttpException | InterruptedException | TimeoutException | ExecutionException e) {
             logger.debug("Error executing player command: {}, {}", fields.getNames().iterator().next(), e.getMessage());
             updateStatus(ThingStatus.OFFLINE, ThingStatusDetail.OFFLINE.COMMUNICATION_ERROR,
@@ -257,7 +283,7 @@ public class PanasonicHandler extends BaseThingHandler {
     /**
      * Secondary call to get additional playback status info
      */
-    private void updatePlaybackStatus() {
+    private void updateExtendedStatus() {
         final String[] statusLines = sendCommand(STATUS_POST_CMD, urlStr).split(CRLF);
 
         // get the second line of the status message

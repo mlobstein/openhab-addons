@@ -46,9 +46,12 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
 
     private final Logger logger = LoggerFactory.getLogger(PanasonicDiscoveryParticipant.class);
 
-    private static final String MANUFACTURER = "panasonic";
+    private static final String MANUFACTURER = "PANASONIC";
+    private static final String UB_PREFIX = "UB";
+    private static final String UPNP_RESULT_BASIC = "Basic";
+
     private static final List<String> MODELS = Arrays.asList("BDT110", "BDT210", "BDT310", "BDT120", "BDT220", "BDT320",
-            "BBT01", "BDT500", "UB420", "UB820", "UB9000");
+            "BBT01", "BDT500", "UB420", "UB820", "UB824", "UB9000", "UB9004");
 
     @Override
     public Set<ThingTypeUID> getSupportedThingTypeUIDs() {
@@ -59,18 +62,18 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
     public @Nullable DiscoveryResult createResult(RemoteDevice device) {
         final ThingUID uid = getThingUID(device);
         if (uid != null) {
-            final Map<String, Object> properties = new HashMap<>(3);
+            final Map<String, Object> properties = new HashMap<>(2);
 
             final URL url = device.getIdentity().getDescriptorURL();
             final String label = device.getDetails().getFriendlyName();
 
-            properties.put("hostName", url.getHost());
+            properties.put(PROPERTY_UUID, uid.getId());
+            properties.put(PROPERTY_HOST_NAME, url.getHost());
 
             final DiscoveryResult result = DiscoveryResultBuilder.create(uid).withProperties(properties)
-                    .withLabel(label).build();
+                    .withRepresentationProperty(PROPERTY_UUID).withLabel(label).build();
 
-            logger.debug("Created a DiscoveryResult for device '{}' with UDN '{}'",
-                    device.getDetails().getFriendlyName(), device.getIdentity().getUdn().getIdentifierString());
+            logger.debug("Created a DiscoveryResult for device '{}' with UID '{}'", label, uid.getId());
             return result;
         } else {
             return null;
@@ -81,21 +84,23 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
     public @Nullable ThingUID getThingUID(RemoteDevice device) {
         if (device.getDetails().getManufacturerDetails().getManufacturer() != null
                 && device.getDetails().getModelDetails().getModelNumber() != null) {
-            logger.debug("UPNP {} : {}", device.getDetails().getManufacturerDetails().getManufacturer(),
-                    device.getDetails().getModelDetails().getModelNumber());
-            if (device.getDetails().getManufacturerDetails().getManufacturer().toLowerCase().startsWith(MANUFACTURER)) {
-                logger.debug("Panasonic Blu-ray Player Found at {}", device.getIdentity().getDescriptorURL().getHost());
-                String id = device.getIdentity().getUdn().getIdentifierString().replaceAll(":", EMPTY).toUpperCase();
+            if (device.getDetails().getManufacturerDetails().getManufacturer().toUpperCase().startsWith(MANUFACTURER)) {
+                logger.debug("Panasonic UPNP device found at {}", device.getIdentity().getDescriptorURL().getHost());
+                String id = device.getIdentity().getUdn().getIdentifierString().replaceAll(COLON, EMPTY).toUpperCase();
 
-                boolean foundMatch = MODELS.stream().anyMatch(model -> (device.getDetails().getModelDetails()
-                        .getModelNumber().toUpperCase().contains(model)));
+                // Shorten to just the mac address, ie: 4D454930-0600-1000-8000-80C755A1D630 -> 80C755A1D630
+                if (id.length() > 12) {
+                    id = id.substring(id.length() - 12);
+                }
 
-                if (foundMatch) {
-                    if (device.getDetails().getModelDetails().getModelNumber().toUpperCase().contains("UB")) {
-                        if (!device.getType().getType().equals("Basic")) {
-                            return null;
+                final String modelNumber = device.getDetails().getModelDetails().getModelNumber().toUpperCase();
+
+                if (MODELS.stream().anyMatch(supportedModel -> (modelNumber.contains(supportedModel)))) {
+                    if (modelNumber.contains(UB_PREFIX)) {
+                        // UHD (UB-nnnn) players return multiple UPNP results, ignore all but the 'Basic' result
+                        if (device.getType().getType().equalsIgnoreCase(UPNP_RESULT_BASIC)) {
+                            return new ThingUID(THING_TYPE_UHD_PLAYER, id);
                         }
-                        return new ThingUID(THING_TYPE_UHD_PLAYER, id);
                     } else {
                         return new ThingUID(THING_TYPE_BD_PLAYER, id);
                     }
