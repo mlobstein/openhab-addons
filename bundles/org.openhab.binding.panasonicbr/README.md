@@ -86,7 +86,7 @@ Exit:  RC_EXIT
 Pop-Up Menu (Top Menu):  RC_TITLE  
 Pop-Up Menu:  RC_PUPMENU  
 VIERA Cast:  RC_V_CAST  
-Home:  RC_MLTNAV  
+Home:  RC_MLTNAVI  
 Up:  RC_UP  
 Down:  RC_DOWN  
 Left:  RC_LEFT  
@@ -150,7 +150,7 @@ Red:  RC_RED
 Green:  RC_GREEN  
 Blue:  RC_BLUE  
 Yellow:  RC_YELLOW  
-Home:  RC_MLTNAV  
+Home:  RC_MLTNAVI  
 Netflix:  RC_NETFLIX  
 Internet:  RC_V_CAST  
 Setup:  RC_SETUP  
