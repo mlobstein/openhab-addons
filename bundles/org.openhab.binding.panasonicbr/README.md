@@ -195,9 +195,9 @@ Switch Player_Power            "Power"                     { channel="panasonicb
 String Player_Button           "Send Command to Player"    { channel="panasonicbr:bd_player:mybdplayer:button" }
 String Player_PlayerStatus     "Status: [%s]"              { channel="panasonicbr:bd_player:mybdplayer:playerStatus" }
 Number:Time Player_TimeElapsed "Elapsed Time: [%d %unit%]" { channel="panasonicbr:bd_player:mybdplayer:timeElapsed" }
-Number:Time Player_TimeTotal "Total Time: [%d %unit%]" { channel="panasonicbr:bd_player:mybdplayer:timeTotal" }
-Number Player_ChapterCurrent "Current Chapter: [%d]" { channel="panasonicbr:bd_player:mybdplayer:chapterCurrent" }
-Number Player_ChapterTotal "Total Chapters: [%d]" { channel="panasonicbr:bd_player:mybdplayer:chapterTotal" }
+Number:Time Player_TimeTotal   "Total Time: [%d %unit%]"   { channel="panasonicbr:bd_player:mybdplayer:timeTotal" }
+Number Player_ChapterCurrent   "Current Chapter: [%d]"     { channel="panasonicbr:bd_player:mybdplayer:chapterCurrent" }
+Number Player_ChapterTotal     "Total Chapters: [%d]"      { channel="panasonicbr:bd_player:mybdplayer:chapterTotal" }
 
 // UHD Player
 Switch Player_Power            "Power"                     { channel="panasonicbr:uhd_player:myuhdplayer:power" 
