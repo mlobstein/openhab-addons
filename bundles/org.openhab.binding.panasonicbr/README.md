@@ -12,10 +12,13 @@ It is understood the reason that players released after 2012 no longer had the h
 It is believed that they resurrected some of their in-house technology for the UHD player firmware and with it the 2011/2012 http control protocol was again implemented on the 2018 UHD player line.
 
 To enable network remote control of the player, configure the following player settings:  
-**Player settings/Network/Network Settings/Remote Device Settings**  
+**Player Settings/Network/Network Settings/Remote Device Settings**  
 Then make sure you have the following values set:  
 **Remote Device Operation: On**  
 **Registration Type: Automatic**  
+
+To enable the binding to control the player while off (network active while off), Quick Start mode must be On as follows:  
+**Player Settings/System/Quick Start: On**  
 
 ## Supported Things
 

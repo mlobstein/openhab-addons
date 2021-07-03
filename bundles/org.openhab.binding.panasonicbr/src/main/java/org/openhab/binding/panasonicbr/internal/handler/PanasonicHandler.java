@@ -128,7 +128,7 @@ public class PanasonicHandler extends BaseThingHandler {
     private void refreshPlayerStatus() {
         final String[] playerStatus = sendCommand(REVIEW_POST_CMD, urlStr).split(CRLF);
 
-        // Parse the second line of the response, 4th group is the status
+        // parse the second line of the response, 4th group is the status
         // F,,,07,00,,8,,,,1,000:00,,05:10,F,FF:FF,0000,0000,0000,0000
         if (playerStatus.length >= 2) {
             final String statusArr[] = playerStatus[1].split(COMMA);
@@ -139,7 +139,9 @@ public class PanasonicHandler extends BaseThingHandler {
                     if (debounce) {
                         updateState(POWER, OnOffType.OFF);
                     }
-                    // When power switched off, let PST_POST_CMD run once more to clear out statuses
+                    debounce = true;
+                    // when power switched off, let PST_POST_CMD run once more to clear out statuses
+                    // then return to skip running the extra status calls while the player is in standby
                     if (ZERO.equals(playMode)) {
                         return;
                     }
@@ -188,7 +190,7 @@ public class PanasonicHandler extends BaseThingHandler {
                         updateState(TIME_ELAPSED, new QuantityType<>(Integer.parseInt(timeCode), API_SECONDS_UNIT));
 
                         // UHD players do not provide extended playback info
-                        if (thingTypeUID.equals(THING_TYPE_BD_PLAYER)) {
+                        if (THING_TYPE_BD_PLAYER.equals(thingTypeUID)) {
                             updateExtendedStatus();
                         }
                     }
@@ -212,11 +214,11 @@ public class PanasonicHandler extends BaseThingHandler {
     public void handleCommand(ChannelUID channelUID, Command command) {
         if (command instanceof RefreshType) {
             logger.debug("Unsupported refresh command: {}", command);
-        } else if (channelUID.getId().equals(BUTTON) || channelUID.getId().equals(POWER)) {
+        } else if (BUTTON.equals(channelUID.getId()) || POWER.equals(channelUID.getId())) {
             String commandStr;
             if (command instanceof OnOffType) {
                 commandStr = "RC_POWER" + command;
-                // If the power is switched on while the polling is running, the switch could bounce back to off,
+                // if the power is switched on while the polling is running, the switch could bounce back to off,
                 // set this flag to stop the first polling event from changing the state of the switch to give the
                 // player time to start up and report the correct power status on the next poll
                 debounce = false;
@@ -281,7 +283,7 @@ public class PanasonicHandler extends BaseThingHandler {
     }
 
     /**
-     * Secondary call to get additional playback status info
+     * Third status call to get additional playback info (returns a 404 error on UHD models)
      */
     private void updateExtendedStatus() {
         final String[] statusLines = sendCommand(STATUS_POST_CMD, urlStr).split(CRLF);
@@ -309,13 +311,13 @@ public class PanasonicHandler extends BaseThingHandler {
         byte[] inputBytes = input.getBytes(StandardCharsets.UTF_8);
         byte[] hash = md.digest(inputBytes);
 
-        // Convert byte array into signum representation
+        // convert byte array into signum representation
         BigInteger number = new BigInteger(1, hash);
 
-        // Convert message digest into hex value
+        // convert message digest into hex value
         StringBuilder hexString = new StringBuilder(number.toString(16));
 
-        // Pad with leading zeros
+        // pad with leading zeros
         while (hexString.length() < 32) {
             hexString.insert(0, ZERO);
         }

@@ -98,7 +98,7 @@ public class PanasonicDiscoveryParticipant implements UpnpDiscoveryParticipant {
                 if (MODELS.stream().anyMatch(supportedModel -> (modelNumber.contains(supportedModel)))) {
                     if (modelNumber.contains(UB_PREFIX)) {
                         // UHD (UB-nnnn) players return multiple UPNP results, ignore all but the 'Basic' result
-                        if (device.getType().getType().equalsIgnoreCase(UPNP_RESULT_BASIC)) {
+                        if (UPNP_RESULT_BASIC.equalsIgnoreCase(device.getType().getType())) {
                             return new ThingUID(THING_TYPE_UHD_PLAYER, id);
                         }
                     } else {
