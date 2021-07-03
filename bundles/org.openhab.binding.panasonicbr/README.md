@@ -42,7 +42,7 @@ The thing has a few configuration parameters:
 | Parameter | Description                                                                                           |
 |-----------|-------------------------------------------------------------------------------------------------------|
 | hostName  | The host name or IP address of the Blu-ray player. Mandatory.                                         |
-| refresh   | Overrides the refresh interval of the player status. Optional, the default and minimum is 10 seconds. |
+| refresh   | Overrides the refresh interval of the player status. Optional, the default and minimum is 5 seconds. |
 | playerKey | For UHD players, to enable authentication of control commands, a key for the player must be specified.|
 
 Some notes:
