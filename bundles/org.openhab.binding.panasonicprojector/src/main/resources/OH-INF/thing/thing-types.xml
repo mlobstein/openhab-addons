@@ -1,0 +1,138 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="panasonicprojector"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="projector-serial">
+		<label>Panasonic Projector - Serial</label>
+		<description>A Panasonic projector</description>
+
+		<channels>
+			<channel id="power" typeId="system.power"/>
+			<channel id="source" typeId="source"/>
+			<channel id="picturemode" typeId="picturemode"/>
+			<channel id="freeze" typeId="freeze"/>
+			<channel id="blank" typeId="blank"/>
+			<channel id="button" typeId="button"/>
+		</channels>
+
+		<config-description>
+			<parameter name="serialPort" type="text" required="true">
+				<label>Serial Port</label>
+				<context>serial-port</context>
+				<description>Serial Port to Use for Connecting to the Panasonic Projector</description>
+			</parameter>
+			<parameter name="pollingInterval" type="integer" min="5" max="60" unit="s" required="false">
+				<label>Polling Interval</label>
+				<description>Configures How Often to Poll the Projector for Updates (5-60; Default 10)</description>
+				<default>10</default>
+			</parameter>
+		</config-description>
+
+	</thing-type>
+
+	<thing-type id="projector-tcp">
+		<label>Panasonic Projector - TCP/IP</label>
+		<description>A Panasonic projector via a serial over IP connection</description>
+
+		<channels>
+			<channel id="power" typeId="system.power"/>
+			<channel id="source" typeId="source"/>
+			<channel id="picturemode" typeId="picturemode"/>
+			<channel id="freeze" typeId="freeze"/>
+			<channel id="blank" typeId="blank"/>
+			<channel id="button" typeId="button"/>
+		</channels>
+
+		<config-description>
+			<parameter name="host" type="text" required="true">
+				<label>Host</label>
+				<context>network-address</context>
+				<description>IP address for the serial over IP device</description>
+			</parameter>
+			<parameter name="port" type="integer" min="1" max="65535" required="true">
+				<label>Port</label>
+				<description>Port for the serial over IP device</description>
+			</parameter>
+			<parameter name="pollingInterval" type="integer" min="5" max="60" unit="s" required="false">
+				<label>Polling Interval</label>
+				<description>Configures How Often to Poll the Projector for Updates (5-60; Default 10)</description>
+				<default>10</default>
+			</parameter>
+		</config-description>
+
+	</thing-type>
+
+	<channel-type id="source">
+		<item-type>String</item-type>
+		<label>Source</label>
+		<description>Retrieve or Set the Input Source</description>
+		<state>
+			<options>
+				<option value="HD1">HDMI1</option>
+				<option value="HD2">HDMI2</option>
+				<option value="HD3">HDMI3</option>
+				<option value="CP1">Component</option>
+				<option value="RG1">PC DSUB</option>
+				<option value="VID">Video</option>
+				<option value="SVD">S-Video</option>
+			</options>
+		</state>
+	</channel-type>
+	<channel-type id="picturemode">
+		<item-type>String</item-type>
+		<label>Picture Mode</label>
+		<description>Retrieve or Set the Picture Mode</description>
+		<state>
+			<options>
+				<option value="NOR">Normal</option>
+				<option value="DYN">Dynamic</option>
+				<option value="709">Rec. 709</option>
+				<option value="DCN">D-cinema</option>
+				<option value="CN1">Cinema 1</option>
+				<option value="CN2">Cinema 2</option>
+				<option value="GM1">Game</option>
+			</options>
+		</state>
+	</channel-type>
+	<channel-type id="freeze">
+		<item-type>Switch</item-type>
+		<label>Freeze Image</label>
+		<description>Turn the Freeze Image Mode On or Off</description>
+	</channel-type>
+	<channel-type id="blank">
+		<item-type>Switch</item-type>
+		<label>Screen Blank</label>
+		<description>Turn the Screen Blank On or Off - Do not toggle this switch continuously over a short period of time</description>
+	</channel-type>
+	<channel-type id="button" advanced="true">
+		<item-type>String</item-type>
+		<label>Button</label>
+		<description>Send a Button Command to the Projector</description>
+		<state>
+			<options>
+				<option value="OMN">Menu</option>
+				<option value="OEN">Enter</option>
+				<option value="OBK">Return</option>
+				<option value="OCU">Up</option>
+				<option value="OCD">Down</option>
+				<option value="OCL">Left</option>
+				<option value="OCR">Right</option>
+				<option value="OLE">Lens</option>
+				<option value="O3D">3-D</option>
+				<option value="FC1">Function</option>
+				<option value="OVM">Picture Mode</option>
+				<option value="OMM">Memory Load</option>
+				<option value="DPA">Picture Adjustment</option>
+				<option value="DCM">Color Management</option>
+				<option value="OVL">Viera Link</option>
+				<option value="OSM">Sub Menu</option>
+				<option value="KST">Keystone</option>
+				<option value="DAM">Advanced Menu</option>
+				<option value="OAS">Auto Setup (PC In Only)</option>
+			</options>
+		</state>
+	</channel-type>
+
+</thing:thing-descriptions>
