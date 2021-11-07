@@ -33,6 +33,17 @@ public class PanasonicProjectorDevice {
     private static final int DEFAULT_TIMEOUT = 5 * 1000;
 
     private static final String ERR = "ER401";
+    private static final String POWER_ON = "001";
+    private static final String POWER_OFF = "000";
+
+    private static final String PON = "PON";
+    private static final String POF = "POF";
+    private static final String QPW = "QPW";
+    private static final String QIN = "QIN";
+    private static final String QPM = "QPM";
+    private static final String OSH = "OSH";
+    private static final String QSH = "QSH";
+    private static final String QFZ = "QFZ";
 
     private final Logger logger = LoggerFactory.getLogger(PanasonicProjectorDevice.class);
 
@@ -101,20 +112,28 @@ public class PanasonicProjectorDevice {
      * Power
      */
     public Switch getPowerStatus() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        return ("001".equals(queryString("QPW")) ? Switch.ON : Switch.OFF);
+        String response = queryString(QPW);
+        if (POWER_ON.equals(response)) {
+            return Switch.ON;
+        } else if (POWER_OFF.equals(response)) {
+            return Switch.OFF;
+        } else {
+            throw new PanasonicProjectorCommandException(
+                    "Invalid response received for Power status inquiry: " + response);
+        }
     }
 
     public void setPower(Switch value) throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        sendCommand(value == Switch.ON ? "PON" : "POF");
+        sendCommand(value == Switch.ON ? PON : POF);
     }
 
     /*
      * Source
      */
     public @Nullable String getSource() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        String response = queryString("QIN");
+        String response = queryString(QIN);
         // if the query is reflected back, return null
-        return !"QIN".equals(response) ? response : null;
+        return !QIN.equals(response) ? response : null;
     }
 
     public void setSource(String value) throws PanasonicProjectorCommandException, PanasonicProjectorException {
@@ -125,9 +144,9 @@ public class PanasonicProjectorDevice {
      * Picture Mode
      */
     public @Nullable String getPictureMode() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        String response = queryString("QPM");
+        String response = queryString(QPM);
         // if the query is reflected back, return null
-        return !"QPM".equals(response) ? response : null;
+        return !QPM.equals(response) ? response : null;
     }
 
     public void setPictureMode(String value) throws PanasonicProjectorCommandException, PanasonicProjectorException {
@@ -138,19 +157,19 @@ public class PanasonicProjectorDevice {
      * Blank Screen
      */
     public Switch getBlank() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        int val = queryInt("QSH");
+        int val = queryInt(QSH);
         return val == 1 ? Switch.ON : Switch.OFF;
     }
 
     public void setBlank() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        sendCommand(String.format("OSH"));
+        sendCommand(OSH);
     }
 
     /*
      * Freeze
      */
     public Switch getFreeze() throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        int val = queryInt("QFZ");
+        int val = queryInt(QFZ);
         return val == 1 ? Switch.ON : Switch.OFF;
     }
 
