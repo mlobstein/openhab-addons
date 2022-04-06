@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,6 +12,7 @@
  */
 package org.openhab.binding.pulseaudio.internal.handler;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.binding.pulseaudio.internal.items.AbstractAudioDeviceConfig;
 import org.openhab.core.thing.Bridge;
 import org.openhab.core.thing.ThingUID;
@@ -23,6 +24,7 @@ import org.openhab.core.thing.ThingUID;
  * @author Tobias Bräutigam - Initial contribution
  *
  */
+@NonNullByDefault
 public interface DeviceStatusListener {
 
     /**

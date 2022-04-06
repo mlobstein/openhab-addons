@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -18,6 +18,7 @@ import java.util.Collections;
 import java.util.Set;
 import java.util.stream.Stream;
 
+import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.openhab.core.thing.ThingTypeUID;
 
 /**
@@ -26,6 +27,7 @@ import org.openhab.core.thing.ThingTypeUID;
  *
  * @author Karel Goderis - Initial contribution
  */
+@NonNullByDefault
 public class KNXBindingConstants {
 
     public static final String BINDING_ID = "knx";

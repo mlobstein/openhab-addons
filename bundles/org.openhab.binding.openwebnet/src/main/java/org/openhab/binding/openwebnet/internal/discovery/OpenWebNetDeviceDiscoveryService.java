@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -144,7 +144,9 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
                 break;
             }
             case SCS_THERMO_CENTRAL_UNIT: {
-                logger.warn("newDiscoveryResult() deviceType={} is not supported yet (WHERE={})", deviceType, where);
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_THERMO_CU;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_THERMO_CU;
+                deviceWho = Who.THERMOREGULATION;
                 break;
             }
             case SCS_ENERGY_METER: {
@@ -157,6 +159,12 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
                 thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_CEN_SCENARIO_CONTROL;
                 thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_CEN_SCENARIO_CONTROL;
                 deviceWho = Who.CEN_SCENARIO_SCHEDULER;
+                break;
+            }
+            case SCS_DRY_CONTACT_IR: {
+                thingTypeUID = OpenWebNetBindingConstants.THING_TYPE_BUS_DRY_CONTACT_IR;
+                thingLabel = OpenWebNetBindingConstants.THING_LABEL_BUS_DRY_CONTACT_IR;
+                deviceWho = Who.CEN_PLUS_SCENARIO_SCHEDULER;
                 break;
             }
             case MULTIFUNCTION_SCENARIO_CONTROL: {
@@ -188,7 +196,7 @@ public class OpenWebNetDeviceDiscoveryService extends AbstractDiscoveryService
 
         DiscoveryResult discoveryResult = null;
 
-        String whereConfig = bridgeHandler.normalizeWhere(where);
+        String whereConfig = where.value();
         if (where instanceof WhereZigBee && WhereZigBee.UNIT_02.equals(((WhereZigBee) where).getUnit())) {
             logger.debug("UNIT=02 found (WHERE={}) -> will remove previous result if exists", where);
             thingRemoved(thingUID); // remove previously discovered thing
