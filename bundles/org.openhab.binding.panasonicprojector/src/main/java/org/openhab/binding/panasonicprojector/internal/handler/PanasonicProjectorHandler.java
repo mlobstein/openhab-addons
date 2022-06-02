@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2021 Contributors to the openHAB project
+ * Copyright (c) 2010-2022 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -265,13 +265,15 @@ public class PanasonicProjectorHandler extends BaseThingHandler {
     }
 
     private void closeConnection() {
-        PanasonicProjectorDevice remoteController = device.get();
-        try {
-            logger.debug("Closing connection to device '{}'", this.thing.getUID());
-            remoteController.disconnect();
-            updateStatus(ThingStatus.OFFLINE);
-        } catch (PanasonicProjectorException e) {
-            logger.debug("Error occurred when closing connection to device '{}'", this.thing.getUID(), e);
+        if (device.isPresent()) {
+            try {
+                logger.debug("Closing connection to device '{}'", this.thing.getUID());
+                device.get().disconnect();
+                device = Optional.empty();
+                updateStatus(ThingStatus.OFFLINE);
+            } catch (PanasonicProjectorException e) {
+                logger.debug("Error occurred when closing connection to device '{}'", this.thing.getUID(), e);
+            }
         }
     }
 }
