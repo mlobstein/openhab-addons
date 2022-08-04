@@ -30,7 +30,7 @@ import org.slf4j.LoggerFactory;
  */
 @NonNullByDefault
 public class PanasonicProjectorDevice {
-    private static final int DEFAULT_TIMEOUT = 5 * 1000;
+    private static final int DEFAULT_TIMEOUT_MS = 5 * 1000;
 
     private static final String ERR = "ER401";
     private static final String POWER_ON = "001";
@@ -63,7 +63,7 @@ public class PanasonicProjectorDevice {
         logger.debug("Query: '{}'", query);
         String response = connection.sendMessage(query, timeout);
 
-        if (response.length() == 0) {
+        if (response.isEmpty()) {
             throw new PanasonicProjectorException("No response received");
         }
 
@@ -82,16 +82,16 @@ public class PanasonicProjectorDevice {
     }
 
     protected void sendCommand(String command) throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        sendCommand(command, DEFAULT_TIMEOUT);
+        sendCommand(command, DEFAULT_TIMEOUT_MS);
     }
 
     protected int queryInt(String query) throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        String response = sendQuery(query, DEFAULT_TIMEOUT);
+        String response = sendQuery(query, DEFAULT_TIMEOUT_MS);
         return Integer.parseInt(response);
     }
 
     protected String queryString(String query) throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        return sendQuery(query, DEFAULT_TIMEOUT);
+        return sendQuery(query, DEFAULT_TIMEOUT_MS);
     }
 
     public void connect() throws PanasonicProjectorException {
@@ -174,7 +174,7 @@ public class PanasonicProjectorDevice {
     }
 
     public void setFreeze(Switch value) throws PanasonicProjectorCommandException, PanasonicProjectorException {
-        sendCommand(String.format("OFZ:%s", (value == Switch.ON ? "1" : "0")), DEFAULT_TIMEOUT);
+        sendCommand(String.format("OFZ:%s", (value == Switch.ON ? "1" : "0")), DEFAULT_TIMEOUT_MS);
     }
 
     /*
