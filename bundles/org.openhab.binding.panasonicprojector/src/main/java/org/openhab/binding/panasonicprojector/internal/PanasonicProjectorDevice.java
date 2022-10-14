@@ -87,7 +87,12 @@ public class PanasonicProjectorDevice {
 
     protected int queryInt(String query) throws PanasonicProjectorCommandException, PanasonicProjectorException {
         String response = sendQuery(query, DEFAULT_TIMEOUT_MS);
-        return Integer.parseInt(response);
+        try {
+            return Integer.parseInt(response);
+        } catch (NumberFormatException nfe) {
+            throw new PanasonicProjectorCommandException(
+                    "Unable to parse response '" + response + "' as Integer for command: " + query);
+        }
     }
 
     protected String queryString(String query) throws PanasonicProjectorCommandException, PanasonicProjectorException {
