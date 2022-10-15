@@ -64,9 +64,9 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
      * @param httpPort port of the openHAB HTTP API
      */
     public ShellyRelayHandler(final Thing thing, final ShellyTranslationProvider translationProvider,
-            final ShellyBindingConfiguration bindingConfig, final Shelly1CoapServer coapServer, final String localIP,
-            int httpPort, final HttpClient httpClient) {
-        super(thing, translationProvider, bindingConfig, coapServer, localIP, httpPort, httpClient);
+            final ShellyBindingConfiguration bindingConfig, ShellyThingTable thingTable,
+            final Shelly1CoapServer coapServer, final HttpClient httpClient) {
+        super(thing, translationProvider, bindingConfig, thingTable, coapServer, httpClient);
     }
 
     @Override
@@ -111,7 +111,9 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                         channelUID.getIdWithoutGroup().equals(CHANNEL_ROL_CONTROL_CONTROL));
 
                 // request updates the next 45sec to update roller position after it stopped
-                requestUpdates(autoCoIoT ? 1 : 45 / UPDATE_STATUS_INTERVAL_SECONDS, false);
+                if (!autoCoIoT && !profile.isGen2) {
+                    requestUpdates(45 / UPDATE_STATUS_INTERVAL_SECONDS, false);
+                }
                 break;
 
             case CHANNEL_ROL_CONTROL_FAV:
@@ -129,11 +131,11 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
             case CHANNEL_TIMER_AUTOON:
                 logger.debug("{}: Set Auto-ON timer to {}", thingName, command);
-                api.setTimer(rIndex, SHELLY_TIMER_AUTOON, getNumber(command).intValue());
+                api.setAutoTimer(rIndex, SHELLY_TIMER_AUTOON, getNumber(command).doubleValue());
                 break;
             case CHANNEL_TIMER_AUTOOFF:
                 logger.debug("{}: Set Auto-OFF timer to {}", thingName, command);
-                api.setTimer(rIndex, SHELLY_TIMER_AUTOOFF, getNumber(command).intValue());
+                api.setAutoTimer(rIndex, SHELLY_TIMER_AUTOOFF, getNumber(command).doubleValue());
                 break;
         }
         return true;
@@ -241,7 +243,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     position = shpos;
                 } else {
                     api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_OPEN);
-                    position = SHELLY_MIN_ROLLER_POS;
                 }
             } else if (command == UpDownType.DOWN || command == OnOffType.OFF
                     || ((command instanceof DecimalType) && (((DecimalType) command).intValue() == 0))) {
@@ -255,7 +256,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                     position = shpos;
                 } else {
                     api.setRollerTurn(index, SHELLY_ALWD_ROLLER_TURN_CLOSE);
-                    position = SHELLY_MAX_ROLLER_POS;
                 }
             }
         } else if (command == StopMoveType.STOP) {
@@ -282,18 +282,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
 
             logger.debug("{}: Changing roller position to {}", thingName, position);
             api.setRollerPos(index, position);
-        }
-
-        if (position != -1) {
-            // make sure both are in sync
-            if (isControl) {
-                int pos = SHELLY_MAX_ROLLER_POS - Math.max(0, Math.min(position, SHELLY_MAX_ROLLER_POS));
-                logger.debug("{}: Set roller position for control channel to {}", thingName, pos);
-                updateChannel(groupName, CHANNEL_ROL_CONTROL_CONTROL, new PercentType(pos));
-            } else {
-                logger.debug("{}: Set roller position channel to {}", thingName, position);
-                updateChannel(groupName, CHANNEL_ROL_CONTROL_POS, new PercentType(position));
-            }
         }
     }
 
@@ -329,7 +317,6 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
      */
     public boolean updateRelays(ShellySettingsStatus status) throws ShellyApiException {
         boolean updated = false;
-        // Check for Relay in Standard Mode
         if (profile.hasRelays && !profile.isDimmer) {
             double voltage = -1;
             if (status.voltage == null && profile.settings.supplyVoltage != null) {
@@ -343,25 +330,23 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
                 updated |= updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_VOLTAGE,
                         toQuantityType(voltage, DIGITS_VOLT, Units.VOLT));
             }
-        }
 
-        if (profile.hasRelays && !profile.isRoller) {
-            logger.trace("{}: Updating {} relay(s)", thingName, profile.numRelays);
-            for (int i = 0; i < status.relays.size(); i++) {
-                createRelayChannels(status.relays.get(i), i);
-                updated |= ShellyComponents.updateRelay(this, status, i);
-                i++;
-            }
-        } else {
-            // Check for Relay in Roller Mode
-            logger.trace("{}: Updating {} rollers", thingName, profile.numRollers);
-            for (int i = 0; i < profile.numRollers; i++) {
-                ShellyRollerStatus roller = status.rollers.get(i);
-                createRollerChannels(roller);
-                updated |= ShellyComponents.updateRoller(this, roller, i);
+            if (!profile.isRoller) {
+                logger.trace("{}: Updating {} relay(s)", thingName, profile.numRelays);
+                for (int i = 0; i < status.relays.size(); i++) {
+                    createRelayChannels(status.relays.get(i), i);
+                    updated |= ShellyComponents.updateRelay(this, status, i);
+                }
+            } else {
+                // Check for Relay in Roller Mode
+                logger.trace("{}: Updating {} rollers", thingName, profile.numRollers);
+                for (int i = 0; i < profile.numRollers; i++) {
+                    ShellyRollerStatus roller = status.rollers.get(i);
+                    createRollerChannels(roller);
+                    updated |= ShellyComponents.updateRoller(this, roller, i);
+                }
             }
         }
-
         return updated;
     }
 
@@ -384,7 +369,7 @@ public class ShellyRelayHandler extends ShellyBaseHandler {
             ShellySettingsStatus dstatus = fromJson(gson, Shelly1ApiJsonDTO.fixDimmerJson(orgStatus.json),
                     ShellySettingsStatus.class);
 
-            logger.trace("{}: Updating {} dimmers(s)", thingName, dstatus.dimmers.size());
+            logger.trace("{}: Updating {} dimmers(s)", thingName, dstatus.dimmers.size());
             int l = 0;
             for (ShellyShortLightStatus dimmer : dstatus.dimmers) {
                 Integer r = l + 1;
