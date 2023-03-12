@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -20,7 +20,7 @@ import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.deutschebahn.internal.timetable.dto.Timetable;
 
 /**
- * Stub Implementation of {@link TimetablesV1Api}, that may return an preconfigured Timetable or
+ * Stub Implementation of {@link TimetablesV1Api}, that may return a preconfigured Timetable or
  * throws an {@link IOException} if not data has been set.
  * 
  * @author Sönke Küper - initial contribution

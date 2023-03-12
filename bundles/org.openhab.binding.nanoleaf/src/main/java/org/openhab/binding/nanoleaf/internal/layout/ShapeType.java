@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -35,9 +35,9 @@ public enum ShapeType {
     SHAPES_CONTROLLER("Controller (Shapes)", 12, 0, 0, 1, DrawingAlgorithm.NONE),
     ELEMENTS_HEXAGON("Elements Hexagon", 14, 134, 6, 1, DrawingAlgorithm.HEXAGON),
     ELEMENTS_HEXAGON_CORNER("Elements Hexagon - Corner", 15, 58, 6, 6, DrawingAlgorithm.CORNER),
-    LINES_CONNECTOR("Lines Connector", 16, 11, 1, 1, DrawingAlgorithm.LINE),
+    LINES_CONNECTOR("Lines Connector", 16, 11, 1, 1, DrawingAlgorithm.NONE),
     LIGHT_LINES("Light Lines", 17, 154, 1, 1, DrawingAlgorithm.LINE),
-    LINES_LINES_SINGLE("Light Lines - Single Sone", 18, 77, 1, 1, DrawingAlgorithm.LINE),
+    LINES_LINES_SINGLE("Light Lines - Single Sone", 18, 77, 2, 2, DrawingAlgorithm.LINE),
     CONTROLLER_CAP("Controller Cap", 19, 11, 0, 1, DrawingAlgorithm.NONE),
     POWER_CONNECTOR("Power Connector", 20, 11, 0, 1, DrawingAlgorithm.NONE);
 

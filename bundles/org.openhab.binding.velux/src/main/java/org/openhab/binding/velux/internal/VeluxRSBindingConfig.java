@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2022 Contributors to the openHAB project
+ * Copyright (c) 2010-2023 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -137,7 +137,7 @@ public class VeluxRSBindingConfig extends VeluxBindingConfig {
     }
 
     /**
-     * Returns the next shutter level for an DOWN command w/ adjusting the actual position.
+     * Returns the next shutter level for a DOWN command w/ adjusting the actual position.
      *
      * @return <b>rollershutterLevel</b> of type Integer with next position after DOWN command.
      */
