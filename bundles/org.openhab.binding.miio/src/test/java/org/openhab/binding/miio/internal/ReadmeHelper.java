@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -141,7 +141,9 @@ public class ReadmeHelper {
 
         Arrays.asList(MiIoDevices.values()).forEach(device -> {
             if (!"unknown".equals(device.getModel())) {
-                String link = device.getModel().replace(".", "-");
+                String link = device.getThingType().equals(MiIoBindingConstants.THING_TYPE_VACUUM)
+                        ? "robo-rock-vacuum-channels"
+                        : device.getModel().replace(".", "-");
                 boolean isSupported = device.getThingType().equals(MiIoBindingConstants.THING_TYPE_UNSUPPORTED);
                 Boolean experimental = false;
                 String remark = "";

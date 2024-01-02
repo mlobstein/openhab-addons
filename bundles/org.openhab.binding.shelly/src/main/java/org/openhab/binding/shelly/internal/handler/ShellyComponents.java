@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -78,7 +78,7 @@ public class ShellyComponents {
         if (status.tmp != null && getBool(status.tmp.isValid) && !thingHandler.getProfile().isSensor
                 && status.tmp.tC != SHELLY_API_INVTEMP) {
             thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ITEMP,
-                    toQuantityType(getDouble(status.tmp.tC), DIGITS_NONE, SIUnits.CELSIUS));
+                    toQuantityType(getDouble(status.tmp.tC), DIGITS_TEMP, SIUnits.CELSIUS));
         } else if (status.temperature != null && status.temperature != SHELLY_API_INVTEMP) {
             thingHandler.updateChannel(CHANNEL_GROUP_DEV_STATUS, CHANNEL_DEVST_ITEMP,
                     toQuantityType(getDouble(status.temperature), DIGITS_NONE, SIUnits.CELSIUS));
@@ -435,7 +435,10 @@ public class ShellyComponents {
                     if (t.tmp != null) {
                         updated |= updateTempChannel(thingHandler, CHANNEL_GROUP_SENSOR, CHANNEL_SENSOR_TEMP,
                                 t.tmp.value, t.tmp.units);
-                        updated |= updateTempChannel(thingHandler, CHANNEL_GROUP_SENSOR, CHANNEL_CONTROL_SETTEMP,
+                        if (t.targetTemp.unit == null) {
+                            t.targetTemp.unit = t.tmp.units;
+                        }
+                        updated |= updateTempChannel(thingHandler, CHANNEL_GROUP_CONTROL, CHANNEL_CONTROL_SETTEMP,
                                 t.targetTemp.value, t.targetTemp.unit);
                     }
                     if (t.pos != null) {

@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -543,7 +543,7 @@ public class MieleBridgeHandler extends BaseBridgeHandler {
                 if (cause == null) {
                     logger.debug("An exception occurred while getting the home devices: '{}'", e.getMessage());
                 } else {
-                    logger.debug("An exception occurred while getting the home devices: '{}' -> '{}", e.getMessage(),
+                    logger.debug("An exception occurred while getting the home devices: '{}' -> '{}'", e.getMessage(),
                             cause.getMessage());
                 }
             }

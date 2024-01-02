@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -27,7 +27,6 @@ import io.netty.util.ReferenceCountUtil;
 
 /**
  * The {@link OnvifCodec} is used by Netty to decode Onvif traffic into message Strings.
- *
  *
  * @author Matthew Skinner - Initial contribution
  */
@@ -66,11 +65,11 @@ public class OnvifCodec extends ChannelDuplexHandler {
         }
         if (evt instanceof IdleStateEvent) {
             IdleStateEvent e = (IdleStateEvent) evt;
-            logger.trace("IdleStateEvent received {}", e.state());
+            logger.trace("IdleStateEvent received: {}", e.state());
             onvifConnection.setIsConnected(false);
             ctx.close();
         } else {
-            logger.trace("Other ONVIF netty channel event occured {}", evt);
+            logger.trace("Other ONVIF netty channel event occurred: {}", evt);
         }
     }
 
