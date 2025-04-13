@@ -7,6 +7,7 @@
 	<thing-type id="projector-serial">
 		<label>Panasonic Projector - Serial</label>
 		<description>A Panasonic projector</description>
+		<semantic-equipment-tag>Projector</semantic-equipment-tag>
 
 		<channels>
 			<channel id="power" typeId="system.power"/>
@@ -36,6 +37,7 @@
 	<thing-type id="projector-tcp">
 		<label>Panasonic Projector - TCP/IP</label>
 		<description>A Panasonic projector via a serial over IP connection</description>
+		<semantic-equipment-tag>Projector</semantic-equipment-tag>
 
 		<channels>
 			<channel id="power" typeId="system.power"/>
