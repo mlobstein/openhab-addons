@@ -1,0 +1,156 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="lacrosse"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="sensor">
+		<label>La Crosse TX60</label>
+		<description>La Crosse TX60-U sensors</description>
+		<!--<semantic-equipment-tag>WeatherStation</semantic-equipment-tag> -->
+
+		<channel-groups>
+			<channel-group id="sensor1" typeId="sensorGroup">
+				<label>Sensor 1</label>
+				<description>The measurements for Sensor 1</description>
+			</channel-group>
+			<channel-group id="sensor2" typeId="sensorGroup">
+				<label>Sensor 2</label>
+				<description>The measurements for Sensor 2</description>
+			</channel-group>
+			<channel-group id="sensor3" typeId="sensorGroup">
+				<label>Sensor 3</label>
+				<description>The measurements for Sensor 3</description>
+			</channel-group>
+			<channel-group id="sensor4" typeId="sensorGroup">
+				<label>Sensor 4</label>
+				<description>The measurements for Sensor 4</description>
+			</channel-group>
+			<channel-group id="sensor5" typeId="sensorGroup">
+				<label>Sensor 5</label>
+				<description>The measurements for Sensor 5</description>
+			</channel-group>
+		</channel-groups>
+
+		<config-description>
+			<parameter name="gatewayMac" type="text" required="true">
+				<context>mac-address</context>
+				<label>Gateway MAC address</label>
+				<description>MAC address of the GW1000U gateway used for the TX60-U sensors (without dashes)</description>
+			</parameter>
+			<parameter name="sensor1sn" type="text" required="true" min="16" max="16">
+				<label>Sensor 1 Serial Number</label>
+				<description>The serial number of the first TX60-U sensor (required)</description>
+			</parameter>
+			<parameter name="sensor2sn" type="text" min="16" max="16">
+				<label>Sensor 2 Serial Number</label>
+				<description>The serial number of the second TX60-U sensor {optional)</description>
+			</parameter>
+			<parameter name="sensor3sn" type="text" min="16" max="16">
+				<label>Sensor 3 Serial Number</label>
+				<description>The serial number of the third TX60-U sensor {optional)</description>
+			</parameter>
+			<parameter name="sensor4sn" type="text" min="16" max="16">
+				<label>Sensor 4 Serial Number</label>
+				<description>The serial number of the fourth TX60-U sensor {optional)</description>
+			</parameter>
+			<parameter name="sensor5sn" type="text" min="16" max="16">
+				<label>Sensor 5 Serial Number</label>
+				<description>The serial number of the fifth TX60-U sensor {optional)</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- Channel Group Type Definition -->
+	<channel-group-type id="sensorGroup">
+		<label>Sensor Group</label>
+		<description>Sensor group for an individual TX60-U sensor</description>
+		<channels>
+			<channel id="temperature" typeId="temperature"/>
+			<channel id="temperatureProbe" typeId="temperatureProbe"/>
+			<channel id="humidity" typeId="humidity"/>
+			<channel id="heatIndex" typeId="heatIndex"/>
+			<channel id="dewPoint" typeId="dewPoint"/>
+			<channel id="rfSignalStrength" typeId="rfSignalStrength"/>
+			<channel id="batteryStatus" typeId="batteryStatus"/>
+			<channel id="lastSeenDateTime" typeId="lastSeenDateTime"/>
+		</channels>
+	</channel-group-type>
+
+	<!-- Channel Type Definitions -->
+	<channel-type id="temperature">
+		<item-type>Number:Temperature</item-type>
+		<label>Temperature</label>
+		<description>Temperature mesured at the sensor</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="temperatureProbe">
+		<item-type>Number:Temperature</item-type>
+		<label>External Temperature</label>
+		<description>Temperature measured by the external probe</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidity">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Humidity</label>
+		<description>Humidity measured at the sensor</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Humidity</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="heatIndex">
+		<item-type>Number:Temperature</item-type>
+		<label>Heat Index</label>
+		<description>Heat Index calculated from the sensor temperature and humidity </description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="dewPoint">
+		<item-type>Number:Temperature</item-type>
+		<label>Dew Point</label>
+		<description>Dew Point calculated from the sensor temperature and humidity</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="rfSignalStrength">
+		<item-type>Number</item-type>
+		<label>RF Signal Strength</label>
+		<description>Strength of the RF signal from the sensor as received at the gateway</description>
+		<state readOnly="true" pattern="%d %unit%"/>
+	</channel-type>
+
+	<channel-type id="batteryStatus">
+		<item-type>String</item-type>
+		<label>Battery Status</label>
+		<description>Battery status of the sensor (OK or Low)</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="lastSeenDateTime">
+		<item-type>DateTime</item-type>
+		<label>Last Seen DateTime</label>
+		<description>The last time data was received from the sensor</description>
+		<tags>
+			<tag>Status</tag>
+			<tag>Timestamp</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+</thing:thing-descriptions>

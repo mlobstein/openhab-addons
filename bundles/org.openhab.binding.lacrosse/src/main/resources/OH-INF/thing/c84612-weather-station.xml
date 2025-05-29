@@ -1,0 +1,186 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="lacrosse"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<thing-type id="weatherstation" listed="true">
+		<label>La Crosse C84612</label>
+		<description>La Crosse C84612 Weather Station</description>
+		<!--<semantic-equipment-tag>WeatherStation</semantic-equipment-tag> -->
+
+		<channels>
+			<channel id="temperatureIn" typeId="temperatureIn"/>
+			<channel id="humidityIn" typeId="humidityIn"/>
+			<channel id="temperatureOut" typeId="temperatureOut"/>
+			<channel id="humidityOut" typeId="humidityOut"/>
+			<channel id="windChill" typeId="windChill"/>
+			<channel id="rainTotal" typeId="rainTotal"/>
+			<channel id="rain" typeId="rain"/>
+			<channel id="windDirection" typeId="windDirection"/>
+			<channel id="windSpeed" typeId="windSpeed"/>
+			<channel id="gustDirection" typeId="gustDirection"/>
+			<channel id="gustSpeed" typeId="gustSpeed"/>
+			<channel id="barometer" typeId="barometer"/>
+			<channel id="rfSignalStrength" typeId="rfSignalStrength"/>
+			<channel id="status" typeId="status"/>
+			<channel id="forecast" typeId="forecast"/>
+			<channel id="lastSeenDateTime" typeId="lastSeenDateTime"/>
+		</channels>
+
+		<config-description>
+			<parameter name="gatewayMac" type="text" required="true">
+				<context>mac-address</context>
+				<label>Gateway MAC address</label>
+				<description>MAC address of the GW1000U gateway used for the weather station (without dashes)</description>
+			</parameter>
+			<parameter name="stationSn" type="text" min="16" max="16">
+				<label>Station Serial Number</label>
+				<description>The serial number of the weather station</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<!-- Channel Type Definitions -->
+
+	<channel-type id="temperatureIn">
+		<item-type>Number:Temperature</item-type>
+		<label>Indoor Temperature</label>
+		<description>Measured indoor temperature</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidityIn">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Indoor Humidity</label>
+		<description>Measured indoor humidity</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Humidity</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="temperatureOut">
+		<item-type>Number:Temperature</item-type>
+		<label>Outdoor Temperature</label>
+		<description>Measured outdoor temperature</description>
+		<category>Temperature</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="humidityOut">
+		<item-type>Number:Dimensionless</item-type>
+		<label>Outdoor Humidity</label>
+		<description>Measured outdoor humidity</description>
+		<category>Humidity</category>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Humidity</tag>
+		</tags>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="windChill">
+		<item-type>Number:Temperature</item-type>
+		<label>Wind Chill</label>
+		<description>Calculated wind chill temperature</description>
+		<tags>
+			<tag>Measurement</tag>
+			<tag>Temperature</tag>
+		</tags>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="rainTotal">
+		<item-type>Number:Length</item-type>
+		<label>Total Rainfall</label>
+		<description>Total rainfall measured (usually since midnight or reset)</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="rain">
+		<item-type>Number:Length</item-type>
+		<label>Rainfall</label>
+		<description>Rainfall over the latest period</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="windDirection">
+		<item-type>Number:Angle</item-type>
+		<label>Wind Direction</label>
+		<description>Current wind direction in degrees</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="windSpeed">
+		<item-type>Number:Speed</item-type>
+		<label>Wind Speed</label>
+		<description>Current wind speed</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="gustDirection">
+		<item-type>Number:Angle</item-type>
+		<label>Gust Direction</label>
+		<description>Current gust direction in degrees</description>
+		<state readOnly="true" pattern="%.0f %unit%"/>
+	</channel-type>
+
+	<channel-type id="gustSpeed">
+		<item-type>Number:Speed</item-type>
+		<label>Gust Speed</label>
+		<description>Current wind gust speed</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="barometer">
+		<item-type>Number:Pressure</item-type>
+		<label>Barometric Pressure</label>
+		<description>Current barometric pressure</description>
+		<state readOnly="true" pattern="%.1f %unit%"/>
+	</channel-type>
+
+	<channel-type id="rfSignalStrength">
+		<item-type>Number</item-type>
+		<label>RF Signal Strength</label>
+		<description>Strength of the RF signal from the weather station as received at the gateway</description>
+		<state readOnly="true" pattern="%d %unit%"/>
+	</channel-type>
+
+	<channel-type id="status" advanced="true">
+		<item-type>String</item-type>
+		<label>Status</label>
+		<description>Status of the weather station??</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="forecast" advanced="true">
+		<item-type>String</item-type>
+		<label>Forecast</label>
+		<description>Weather forecast??</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="lastSeenDateTime">
+		<item-type>DateTime</item-type>
+		<label>Last Seen</label>
+		<description>The last time data was received from the weather station</description>
+		<tags>
+			<tag>Status</tag>
+			<tag>Timestamp</tag>
+		</tags>
+		<state readOnly="true"/>
+	</channel-type>
+
+</thing:thing-descriptions>
