@@ -58,7 +58,7 @@ public class LacrosseHandler extends BaseThingHandler {
     private @Nullable LacrosseConfiguration config;
     private LacrosseDataHandler dataHandler;
     private String gatewayMac = "";
-    private SimpleEntry<String, Object> configMap = new AbstractMap.SimpleEntry<>("", "");
+    private SimpleEntry<String, ?> configMap = new AbstractMap.SimpleEntry<String, String>("", "");
 
     public LacrosseHandler(Thing thing) {
         super(thing);
@@ -68,16 +68,25 @@ public class LacrosseHandler extends BaseThingHandler {
     @Override
     public void initialize() {
         config = getConfigAs(LacrosseConfiguration.class);
-        this.gatewayMac = config.gatewayMac;
+        final LacrosseConfiguration configLocal = config;
 
-        if (THING_TYPE_WEATHER_STATION.equals(this.getThing().getThingTypeUID())) {
-            this.configMap = new AbstractMap.SimpleEntry<>(this.gatewayMac, config.stationSn);
-        } else if (THING_TYPE_SENSOR.equals(this.getThing().getThingTypeUID())) {
-            this.configMap = new AbstractMap.SimpleEntry<>(this.gatewayMac,
-                    List.of(config.sensor1sn, config.sensor2sn, config.sensor3sn, config.sensor4sn, config.sensor5sn));
+        if (configLocal != null) {
+            this.gatewayMac = configLocal.gatewayMac;
+
+            if (THING_TYPE_WEATHER_STATION.equals(this.getThing().getThingTypeUID())) {
+                this.configMap = new AbstractMap.SimpleEntry<String, String>(configLocal.gatewayMac,
+                        configLocal.stationSn);
+            } else if (THING_TYPE_SENSOR.equals(this.getThing().getThingTypeUID())) {
+                this.configMap = new AbstractMap.SimpleEntry<>(configLocal.gatewayMac, List.of(configLocal.sensor1sn,
+                        configLocal.sensor2sn, configLocal.sensor3sn, configLocal.sensor4sn, configLocal.sensor5sn));
+            }
         }
 
         updateStatus(ThingStatus.UNKNOWN);
+    }
+
+    public <T> SimpleEntry<String, String> getStationConfigMap(String gatewayMac, String stationSn) {
+        return new AbstractMap.SimpleEntry<String, String>(gatewayMac, stationSn);
     }
 
     @Override
@@ -85,7 +94,7 @@ public class LacrosseHandler extends BaseThingHandler {
         logger.debug("No commands can be processed - All channels are read-only");
     }
 
-    public SimpleEntry<String, Object> getConfigMap() {
+    public SimpleEntry<String, ?> getConfigMap() {
         return this.configMap;
     }
 
@@ -144,20 +153,20 @@ public class LacrosseHandler extends BaseThingHandler {
         return SENSOR + sensorData.getSensorId() + "#" + channel;
     }
 
-    // convenience methods to abstract calling updateState() and sending UNDEF state for null values
-    private void doUpdate(String channel, Double data, Unit<?> unit) {
+    // convenience methods to abstract calling updateState() and sends UNDEF state for null values
+    private void doUpdate(String channel, @Nullable Double data, Unit<?> unit) {
         updateState(channel, data == null ? UnDefType.UNDEF : new QuantityType<>(data, unit));
     }
 
-    private void doUpdate(String channel, Integer data, Unit<?> unit) {
+    private void doUpdate(String channel, @Nullable Integer data, Unit<?> unit) {
         updateState(channel, data == null ? UnDefType.UNDEF : new QuantityType<>(data, unit));
     }
 
-    private void doUpdate(String channel, String data) {
+    private void doUpdate(String channel, @Nullable String data) {
         updateState(channel, data == null ? UnDefType.UNDEF : new StringType(data));
     }
 
-    private void doUpdate(String channel, Date data) {
+    private void doUpdate(String channel, @Nullable Date data) {
         updateState(channel, data == null ? UnDefType.UNDEF : new DateTimeType(data.toInstant()));
     }
 }

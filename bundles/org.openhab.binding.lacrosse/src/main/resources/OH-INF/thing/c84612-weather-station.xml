@@ -34,7 +34,7 @@
 				<label>Gateway MAC address</label>
 				<description>MAC address of the GW1000U gateway used for the weather station (without dashes)</description>
 			</parameter>
-			<parameter name="stationSn" type="text" min="16" max="16">
+			<parameter name="stationSn" type="text" min="16" max="16" required="true">
 				<label>Station Serial Number</label>
 				<description>The serial number of the weather station</description>
 			</parameter>

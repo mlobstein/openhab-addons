@@ -15,6 +15,7 @@ package org.openhab.binding.lacrosse.internal.interceptor;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Locale;
+import java.util.TimeZone;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 
@@ -25,8 +26,15 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class LacrossePacketUtil {
+    private static final SimpleDateFormat HEADER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+    static {
+        HEADER_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
+    }
+
+    private static final SimpleDateFormat TS_DATE_FORMAT = new SimpleDateFormat("HHmmssddMMyy", Locale.US);
+
     protected static String fmtBytes(String data) {
-        if (data == null || data.isEmpty()) {
+        if (data.isEmpty()) {
             return "";
         }
         StringBuilder sb = new StringBuilder();
@@ -66,7 +74,7 @@ public class LacrossePacketUtil {
         return sb.toString();
     }
 
-    protected static String leftJustify(String s, int width, char pad) {
+    private static String leftJustify(String s, int width, char pad) {
         StringBuilder sb = new StringBuilder(s);
         while (sb.length() < width) {
             sb.append(pad);
@@ -117,7 +125,7 @@ public class LacrossePacketUtil {
         payload.append((char) 0x00);
         payload.append((char) hi).append((char) lo); // last_history_address 2 bytes (0x3e 0xde)
 
-        payload.append(encodeTs(new Date())); // 6 bytes
+        payload.append(encodeTs()); // 6 bytes
 
         payload.append((char) 0x53);
         payload.append((char) historyInterval); // byte 0x1f (0x7)
@@ -187,7 +195,7 @@ public class LacrossePacketUtil {
         payload.append((char) 0x0e).append((char) 0xff);
 
         // encode_ts(current date/time) -- 6 bytes
-        payload.append(encodeTs(new Date()));
+        payload.append(encodeTs());
 
         // chr(0x53)
         payload.append((char) 0x53);
@@ -214,7 +222,7 @@ public class LacrossePacketUtil {
         return payload.toString();
     }
 
-    protected static int checksum8(String input) {
+    private static int checksum8(String input) {
         int n = 0;
         for (int i = 0; i < input.length(); i++) {
             n += input.charAt(i);
@@ -222,7 +230,7 @@ public class LacrossePacketUtil {
         return n & 0xff;
     }
 
-    protected static int checksum16p7(String input) {
+    private static int checksum16p7(String input) {
         int n = 7;
         for (int i = 0; i < input.length(); i++) {
             n += input.charAt(i);
@@ -240,9 +248,10 @@ public class LacrossePacketUtil {
     }
 
     // Assumes the serial number is a 16-character hex string, encoding it into 8 bytes
-    protected static String encodeSerial(String sn) {
-        if (sn.length() != 16)
+    private static String encodeSerial(String sn) {
+        if (sn.length() != 16) {
             throw new IllegalArgumentException("Serial must be 16 hex characters");
+        }
         StringBuilder sb = new StringBuilder();
         for (int i = 0; i < sn.length(); i += 2) {
             String byteStr = sn.substring(i, i + 2);
@@ -253,22 +262,25 @@ public class LacrossePacketUtil {
     }
 
     // Encodes a timestamp (seconds since epoch) into 6 bytes (as a String)
-    protected static String encodeTs(Date date) {
-        // Format: "HHmmssddMMyy", local time
-        SimpleDateFormat sdf = new SimpleDateFormat("HHmmssddMMyy", Locale.US);
-        // If you want UTC instead of local, uncomment the next line:
-        // sdf.setTimeZone(TimeZone.getTimeZone("UTC"));
-        String tstr = sdf.format(date);
-        StringBuilder sb = new StringBuilder();
-        for (int i = 0; i < 6; i++) {
-            String part = tstr.substring(i * 2, i * 2 + 2);
-            sb.append((char) encodeBcd(part));
+    private static String encodeTs() {
+        synchronized (TS_DATE_FORMAT) {
+            final StringBuilder sb = new StringBuilder();
+            final String tstr = TS_DATE_FORMAT.format(new Date());
+            for (int i = 0; i < 6; i++) {
+                sb.append((char) encodeBcd(tstr.substring(i * 2, i * 2 + 2)));
+            }
+            return sb.toString();
         }
-        return sb.toString();
+    }
+
+    protected static String putResponseDate() {
+        synchronized (HEADER_DATE_FORMAT) {
+            return HEADER_DATE_FORMAT.format(new Date());
+        }
     }
 
     // Encodes a two-digit decimal string into a BCD byte
-    protected static int encodeBcd(String x) {
+    private static int encodeBcd(String x) {
         int val = Integer.parseInt(x);
         int msb = val / 10;
         int lsb = val % 10;

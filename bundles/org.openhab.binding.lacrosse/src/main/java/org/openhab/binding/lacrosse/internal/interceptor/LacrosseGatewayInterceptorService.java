@@ -15,6 +15,7 @@ package org.openhab.binding.lacrosse.internal.interceptor;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -53,6 +54,9 @@ public class LacrosseGatewayInterceptorService {
     private final Set<LacrosseHandler> handlers = ConcurrentHashMap.newKeySet();
 
     private final Logger logger = LoggerFactory.getLogger(LacrosseGatewayInterceptorService.class);
+
+    Map<String, Integer> lastHistoryAddressMap = new HashMap<String, Integer>();
+    Map<String, String> gatewayIpAddressMap = new HashMap<String, String>();
 
     @Activate
     protected void activate(ComponentContext componentContext, Map<String, Object> properties) {
@@ -103,12 +107,29 @@ public class LacrosseGatewayInterceptorService {
         });
     }
 
-    public List<SimpleEntry<String, Object>> getConfigMaps() {
-        List<SimpleEntry<String, Object>> configMaps = new ArrayList<SimpleEntry<String, Object>>();
+    public List<SimpleEntry<String, ?>> getConfigMaps() {
+        List<SimpleEntry<String, ?>> configMaps = new ArrayList<SimpleEntry<String, ?>>();
         getLacrosseHandlers().forEach(handler -> {
             configMaps.add(handler.getConfigMap());
         });
         return configMaps;
+    }
+
+    public void saveLastHistoryAddress(String mac, Integer lastHistoryAddres) {
+        lastHistoryAddressMap.put(mac, lastHistoryAddres);
+    }
+
+    public Integer getLastHistoryAddress(String mac) {
+        final Integer lastHistoryAddressLocal = lastHistoryAddressMap.get(mac);
+        return lastHistoryAddressLocal != null ? lastHistoryAddressLocal : 0;
+    }
+
+    public void putGatewayIpAddress(String mac, String ipAddress) {
+        gatewayIpAddressMap.put(mac, ipAddress);
+    }
+
+    public @Nullable String getGatewayIpAddress(String mac) {
+        return gatewayIpAddressMap.get(mac);
     }
 
     /**

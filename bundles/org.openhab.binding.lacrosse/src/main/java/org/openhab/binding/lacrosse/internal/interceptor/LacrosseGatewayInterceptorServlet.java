@@ -13,12 +13,9 @@
 package org.openhab.binding.lacrosse.internal.interceptor;
 
 import java.io.IOException;
-import java.text.SimpleDateFormat;
 import java.util.AbstractMap.SimpleEntry;
-import java.util.Date;
 import java.util.List;
 import java.util.Optional;
-import java.util.TimeZone;
 import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServlet;
@@ -44,15 +41,10 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
     private static final String EMPTY_SERIAL = "0000000000000000";
     private static final String SERVER_NAME = "box.weatherdirect.com";
 
-    private static final SimpleDateFormat HEADER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
-    static {
-        HEADER_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
-    }
-
     private String stationSerial = EMPTY_SERIAL; // serial from lacrosse, starts with 7fff
     private final int pingInterval = 240; // how often gateway should ping the server, in seconds
     private final int sensorInterval = 5; // minutes between data packets
-    private final int historyInterval = 5; // minutes between data packets
+    private final int historyInterval = 1; // value for history interval: 0x01 - 5 minutes
     private final int lcdBrightness = 4;
 
     private LacrosseGatewayInterceptorService interceptorService;
@@ -68,15 +60,14 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
         this.interceptorService = interceptorService;
     }
 
-    @Override
-    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        response.setContentType("text/html;");
-        response.getWriter().println("<h1>Hello world! this is the LacrosseGatewayInterceptorServlet</h1>");
-    }
-
+    /**
+     * Handles PUT requests from the GW1000U gateway on the '/request.breq' end point
+     *
+     * @param request The HttpServletRequest object
+     * @param response The HttpServletResponse object
+     */
     @Override
     public void doPut(HttpServletRequest request, HttpServletResponse response) throws IOException {
-
         final String header = request.getHeader("HTTP_IDENTIFY");
 
         String[] parts = new String[] { "" };
@@ -94,6 +85,8 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
             String id1 = parts[1];
             String code = parts[2];
             String id2 = parts[3];
+
+            interceptorService.putGatewayIpAddress(mac, request.getRemoteAddr());
 
             String pktType = String.format("%s:%s", id1, id2).toUpperCase();
             logger.debug("pktType: {}", pktType);
@@ -145,23 +138,21 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                 case "05:00":
                     flags = "14:01";
                     // get the configMap for this mac
-                    final Optional<SimpleEntry<String, Object>> configMapContainer = interceptorService.getConfigMaps()
+                    final Optional<SimpleEntry<String, ?>> configMapContainer = interceptorService.getConfigMaps()
                             .stream().filter(map -> mac.equals(map.getKey())).findFirst();
 
                     if (configMapContainer.isPresent()) {
-                        final SimpleEntry<String, Object> configMap = configMapContainer.get();
+                        final SimpleEntry<String, ?> configMap = configMapContainer.get();
 
                         // determine if gateway is for a Weather Station or Sensor in order to properly respond to pings
                         if (configMap.getValue() instanceof String) {
                             // station ping. gateway sends 5 bytes.
                             final String stationSerial = (String) configMap.getValue();
 
-                            // TODO: fix hardcode
-                            int lastHistoryAddress = 1;
-
                             if (stationSerial != null && !stationSerial.isEmpty()) {
                                 responseStr = LacrossePacketUtil.createStationPingResponse(stationSerial,
-                                        sensorInterval, historyInterval, lcdBrightness, lastHistoryAddress);
+                                        sensorInterval, historyInterval, lcdBrightness,
+                                        interceptorService.getLastHistoryAddress(mac));
                             } else {
                                 logger.debug("station serial number not found");
                             }
@@ -169,7 +160,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                             // sensor ping
                             final int sensorId = Integer.parseInt(pktType.substring(1, 2));
                             final List<String> sensorSerials = (List<String>) configMap.getValue();
-                            if (!sensorSerials.get(sensorId).isEmpty()) {
+                            if (sensorSerials != null && !sensorSerials.get(sensorId).isEmpty()) {
                                 responseStr = LacrossePacketUtil.createSensorPingResponse(sensorId,
                                         sensorSerials.get(sensorId), sensorInterval);
                             } else {
@@ -248,7 +239,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                 case "05:01":
                     // data packet
                     flags = "00:00"; // also observed 00:01
-                    if (data != null && data.length() > 0) {
+                    if (!data.isEmpty()) {
                         if ((data.charAt(0) & 0xFF) == 0x01) {
                             // this is a current conditions packet, process it
                             interceptorService.dispatchReceivedGatewayData(mac, pktType,
@@ -258,7 +249,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                             int caddr = ((data.charAt(4) & 0xFF) * 256) + (data.charAt(5) & 0xFF);
                             int naddr = ((data.charAt(6) & 0xFF) * 256) + (data.charAt(7) & 0xFF);
 
-                            // lastHistoryAddress = caddr; TODO: What is the history packet address ever needed for?
+                            interceptorService.saveLastHistoryAddress(mac, caddr);
                             logger.debug("current_addr=0x{}x next_addr=0x{}x", String.format("%04", caddr),
                                     String.format("%04", naddr));
                         } else {
@@ -286,8 +277,62 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
         response.setHeader("X-ApsNet-Version", "2.0.50727");
         response.setHeader("HTTP_FLAGS", flags);
         response.setHeader("X-Powered-By", "ASP.NET");
-        response.setHeader("Date", HEADER_DATE_FORMAT.format(new Date()));
+        response.setHeader("Date", LacrossePacketUtil.putResponseDate());
         response.setHeader("Connection", "close");
         response.getWriter().println(responseStr);
+    }
+
+    /**
+     * Handles GET requests from the end user on the /request.breq end point in order to provide troubleshooting
+     * information
+     *
+     * @param request The HttpServletRequest object
+     * @param response The HttpServletResponse object
+     */
+    @Override
+    public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
+        StringBuilder html = new StringBuilder();
+        html.append("<html>\n<h1>LacrosseGatewayInterceptorServlet - active</h1>");
+        html.append("<h3>Configured Gateways: </h3>\n<ul>");
+
+        interceptorService.getConfigMaps().forEach(configMap -> {
+            html.append("\t<li>Gateway ");
+            html.append(configMap.getKey());
+            if (interceptorService.getGatewayIpAddress(configMap.getKey()) != null) {
+                html.append(" <span style=\"color: #18864b\">online!</span> - <a href=\"http://");
+                html.append(interceptorService.getGatewayIpAddress(configMap.getKey()));
+                html.append("/\" target=\"_blank\">status page</a>\n");
+            }
+
+            if (configMap.getValue() instanceof String) {
+                html.append("\t\t<ul><li>Weather Station - ");
+                html.append(configMap.getValue());
+                html.append("</li></ul>\n\t</li>\n");
+            }
+
+            if ((configMap.getValue() instanceof List<?>)) {
+                final List<String> sensorSerials = (List<String>) configMap.getValue();
+
+                if (!sensorSerials.isEmpty()) {
+                    html.append("\t\t<ol>\n");
+                    sensorSerials.forEach(sensor -> {
+                        html.append("\t\t\t<li>Sensor - ");
+                        html.append(sensor);
+                        html.append("</li>\n");
+                    });
+                    html.append("\t\t</ol>\n\t</li>\n");
+                }
+            }
+
+        });
+        if (interceptorService.getConfigMaps().isEmpty()) {
+            html.append("\t<li>None - check <a href=\"/settings/things/\" target=\"_blank\">openHAB things</a></li>\n");
+        }
+        html.append("</ul>\n<br/><br/>\n");
+        html.append(
+                "<a href=\"https://github.com/mlobstein/openhab-addons/tree/lacrosse/bundles/org.openhab.binding.lacrosse#readme\" target=\"_blank\">documentation</a>\n</html>");
+
+        response.setContentType("text/html;");
+        response.getWriter().println(html.toString());
     }
 }

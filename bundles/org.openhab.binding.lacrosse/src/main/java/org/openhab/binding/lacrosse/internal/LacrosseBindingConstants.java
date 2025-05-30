@@ -36,15 +36,6 @@ public class LacrosseBindingConstants {
     public static final String RF_SIGNAL_STRENGTH = "rfSignalStrength";
     public static final String LAST_SEEN_DATE_TIME = "lastSeenDateTime";
 
-    // TX60-U sensor channels
-    public static final String SENSOR = "sensor";
-    public static final String TEMPERATURE = "temperature";
-    public static final String TEMPERATURE_PROBE = "temperatureProbe";
-    public static final String HUMIDITY = "humidity";
-    public static final String HEAT_INDEX = "heatIndex";
-    public static final String DEW_POINT = "dewPoint";
-    public static final String BATTERY_STATUS = "batteryStatus";
-
     // C84612 weather station channels
     public static final String TEMPERATURE_IN = "temperatureIn";
     public static final String HUMIDITY_IN = "humidityIn";
@@ -60,4 +51,13 @@ public class LacrosseBindingConstants {
     public static final String BAROMETER = "barometer";
     public static final String STATUS = "status";
     public static final String FORECAST = "forecast";
+
+    // TX60-U sensor channels
+    public static final String SENSOR = "sensor";
+    public static final String TEMPERATURE = "temperature";
+    public static final String TEMPERATURE_PROBE = "temperatureProbe";
+    public static final String HUMIDITY = "humidity";
+    public static final String HEAT_INDEX = "heatIndex";
+    public static final String DEW_POINT = "dewPoint";
+    public static final String BATTERY_STATUS = "batteryStatus";
 }
