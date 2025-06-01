@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The {@link LacrosseDataHandler} is responsible for processing the weather and sensor data packets received from the
- * GW1000U
+ * GW1000U ERF gateway
  *
  * @author Michael Lobstein - Initial contribution
  */
@@ -57,7 +57,7 @@ public class LacrosseDataHandler {
     }
 
     private LacrosseWeatherData processWeatherData(String data) {
-        LacrosseWeatherData weatherData = new LacrosseWeatherData();
+        final LacrosseWeatherData weatherData = new LacrosseWeatherData();
 
         // this expects a string of hex characters. the data packet length
         // is 197, so the hex string should be 394 characters.
@@ -92,7 +92,7 @@ public class LacrosseDataHandler {
     }
 
     private LacrosseSensorData processSensorData(String sensorId, String data) {
-        LacrosseSensorData sensorData = new LacrosseSensorData();
+        final LacrosseSensorData sensorData = new LacrosseSensorData();
 
         // this expects a string of hex characters. the data packet length
         // is 23, so the hex string should be 46 characters.
@@ -119,7 +119,7 @@ public class LacrosseDataHandler {
 
     // Returns temperature in degree C, or null if input is invalid
     private @Nullable Double getTemperature(String x, int idx) {
-        String s = x.substring(idx, idx + 3);
+        final String s = x.substring(idx, idx + 3);
         if (("aaa").equalsIgnoreCase(s) || ("aa3").equalsIgnoreCase(s) || ("aa6").equalsIgnoreCase(s)
                 || ("aa0").equalsIgnoreCase(s)) {
             return null;
@@ -129,19 +129,19 @@ public class LacrosseDataHandler {
 
     // Converts a hexadecimal temperature string from TX60 format to Fahrenheit (rounded to 1 decimal place)
     private @Nullable Double getTemperatureTx60(String x, int idx) {
-        String a = x.substring(idx, idx + 2);
-        String d = x.substring(idx + 2, idx + 4);
+        final String a = x.substring(idx, idx + 2);
+        final String d = x.substring(idx + 2, idx + 4);
         if (("aa").equalsIgnoreCase(a) && ("0a").equalsIgnoreCase(d)) {
             return null;
         }
-        double value = (bin2int(a) + Integer.parseInt(d, 16) / 10.0) - 40.0;
+        final double value = (bin2int(a) + Integer.parseInt(d, 16) / 10.0) - 40.0;
         // Round to 1 decimal place
         return Math.round(value * 10.0) / 10.0;
     }
 
     // Returns humidity in percent, or null if value is invalid
     private @Nullable Integer getHum(String x, int idx, boolean isBin) {
-        String s = x.substring(idx, idx + 2);
+        final String s = x.substring(idx, idx + 2);
         if (("aa").equalsIgnoreCase(s)) {
             return null;
         }
@@ -159,11 +159,11 @@ public class LacrosseDataHandler {
             return null;
         }
         // Constants from NOAA
-        double[] c = { 0, -42.379, 2.04901523, 10.14333127, -0.22475541, -6.83783E-3, -5.481717E-2, 1.22874E-3,
+        final double[] c = { 0, -42.379, 2.04901523, 10.14333127, -0.22475541, -6.83783E-3, -5.481717E-2, 1.22874E-3,
                 8.5282E-4, -1.99E-6 };
-        double t2 = Math.pow(t, 2);
-        double rh2 = Math.pow(rh, 2);
-        double hi = c[1] + c[2] * t + c[3] * rh + c[4] * t * rh + c[5] * t2 + c[6] * rh2 + c[7] * t2 * rh
+        final double t2 = Math.pow(t, 2);
+        final double rh2 = Math.pow(rh, 2);
+        final double hi = c[1] + c[2] * t + c[3] * rh + c[4] * t * rh + c[5] * t2 + c[6] * rh2 + c[7] * t2 * rh
                 + c[8] * t * rh2 + c[9] * t2 * rh2;
         return Math.round(hi * 10.0) / 10.0;
     }
@@ -171,18 +171,18 @@ public class LacrosseDataHandler {
     // Returns the dew point in degrees Fahrenheit, rounded to 1 decimal place
     private static Double getDewPoint(double t, double rh) {
         // Constants from wikipedia.org
-        double b = 17.67;
-        double c = 243.5;
-        double gamma = Math.log(rh / 100.0) + ((b * t) / (c + t));
-        double dewPoint = (c * gamma) / (b - gamma);
+        final double b = 17.67;
+        final double c = 243.5;
+        final double gamma = Math.log(rh / 100.0) + ((b * t) / (c + t));
+        final double dewPoint = (c * gamma) / (b - gamma);
         return Math.round(dewPoint * 10.0) / 10.0;
     }
 
     // Returns rainfall total in mm, given a BCD string, starting index, and optional length n (default 7)
     private double getRainfall(String x, int idx) {
-        int n = 7;
+        final int n = 7;
 
-        int v = bcd2int(x.substring(idx, idx + n));
+        final int v = bcd2int(x.substring(idx, idx + n));
         // if (n == 6) {
         // return v / 100.0;
         // } else {
@@ -230,9 +230,9 @@ public class LacrosseDataHandler {
 
     // Converts BCD-encoded hex string (length 2) to int
     private int bcd2int(String x) {
-        int val = Integer.parseInt(x, 16);
-        int msb = (val >> 4) & 0xF;
-        int lsb = val & 0xF;
+        final int val = Integer.parseInt(x, 16);
+        final int msb = (val >> 4) & 0xF;
+        final int lsb = val & 0xF;
         return msb * 10 + lsb;
     }
 }

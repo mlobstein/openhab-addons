@@ -15,8 +15,8 @@ package org.openhab.binding.lacrosse.internal.interceptor;
 import java.io.IOException;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
@@ -27,8 +27,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * The {@code GatewayInterceptorServlet} class acts as the registered end point to receive requests from the Lacrosse
- * GW1000U gateway.
+ * The {@code GatewayInterceptorServlet} class acts as the registered end point to receive requests from the La Crosse
+ * GW1000U ERF gateway.
+ *
+ * The communication routines were adapted from https://github.com/matthewwall/weewx-interceptor and translated from
+ * Python using GitHub Copilot.
  *
  * @author Michael Lobstein - Initial contribution
  */
@@ -61,7 +64,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
     }
 
     /**
-     * Handles PUT requests from the GW1000U gateway on the '/request.breq' end point
+     * Handles PUT requests from the GW1000U ERF gateway on the '/request.breq' end point
      *
      * @param request The HttpServletRequest object
      * @param response The HttpServletResponse object
@@ -81,45 +84,65 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
         }
 
         if (parts.length == 4) {
-            String mac = parts[0];
+            String gatewaySn = parts[0];
             String id1 = parts[1];
             String code = parts[2];
             String id2 = parts[3];
 
-            interceptorService.putGatewayIpAddress(mac, request.getRemoteAddr());
+            interceptorService.putGatewayIpAddress(gatewaySn, request.getRemoteAddr());
 
-            String pktType = String.format("%s:%s", id1, id2).toUpperCase();
+            final String pktType = String.format("%s:%s", id1, id2).toUpperCase();
             logger.debug("pktType: {}", pktType);
-            String lengthStr = request.getHeader("Content-Length");
+            final String lengthStr = request.getHeader("Content-Length");
             int length = 0;
             String data = "";
+            boolean isPing = false;
+            boolean isGwCheck = false;
 
             if (lengthStr != null && lengthStr.chars().allMatch(Character::isDigit)) {
                 length = Integer.parseInt(lengthStr);
             }
 
             if (length > 0) {
-                data = request.getReader().lines().collect(Collectors.joining(System.lineSeparator()));
+                // data = request.getReader().lines().collect(Collectors.joining("\n"));
+
+                // ServletInputStream iii = request.getInputStream();
+                // byte[] buffer = new byte[length];
+                // iii.read(buffer, 0, length);
+                // data = new String(buffer, StandardCharsets.US_ASCII);
+
+                // Read one character at a time from the request body (a short string of binary data from the
+                // weather station or sensor) and add it to the string builder
+                final StringBuilder sb = new StringBuilder();
+                int ch;
+                while ((ch = request.getReader().read()) != -1) {
+                    sb.append((char) ch);
+                }
+                data = sb.toString();
             }
 
-            logger.debug("recv: {}:{} {} {} {}", id1, id2, mac, code, LacrossePacketUtil.fmtBytes(data));
+            logger.debug("recv: {}:{} {} {} {}", id1, id2, gatewaySn, code, LacrossePacketUtil.fmtBytes(data));
 
             switch (pktType) {
                 case "00:10":
                     // gateway power up
-                    logger.debug("power up from gateway with mac {}", mac);
+                    logger.debug("power up from gateway with sn {}", gatewaySn);
                     flags = "10:00";
+                    isPing = true;
+                    isGwCheck = true;
                     break;
                 case "00:14":
                     // received after response to 7f:10 packet.
                     // gateway sends 14 bytes.
-                    logger.debug("registration confirmed for mac {} ({})", mac, LacrossePacketUtil.fmtBytes(data));
+                    logger.debug("registration confirmed for gatewaySn {} ({})", gatewaySn,
+                            LacrossePacketUtil.fmtBytes(data));
                     flags = "1C:00";
                     break;
                 case "00:20":
                     // gateway registration
-                    logger.debug("registration from gateway with mac {}", mac);
+                    logger.debug("registration from gateway with gatewaySn {}", gatewaySn);
                     flags = "20:00"; // sometimes replies with 20:01
+                    isGwCheck = true;
                     responseStr = LacrossePacketUtil.createGatewayRegResponse(SERVER_NAME);
                     break;
                 case "00:30":
@@ -129,6 +152,8 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                 case "00:70":
                     // gateway ping
                     flags = "70:00"; // also observed 20:01
+                    isPing = true;
+                    isGwCheck = true;
                     responseStr = LacrossePacketUtil.createGatewayPingResponse(pingInterval);
                     break;
                 case "01:00":
@@ -137,9 +162,11 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                 case "04:00":
                 case "05:00":
                     flags = "14:01";
-                    // get the configMap for this mac
+                    isPing = true;
+                    isGwCheck = true;
+                    // get the configMap for this gatewaySn
                     final Optional<SimpleEntry<String, ?>> configMapContainer = interceptorService.getConfigMaps()
-                            .stream().filter(map -> mac.equals(map.getKey())).findFirst();
+                            .stream().filter(map -> gatewaySn.equals(map.getKey())).findFirst();
 
                     if (configMapContainer.isPresent()) {
                         final SimpleEntry<String, ?> configMap = configMapContainer.get();
@@ -152,7 +179,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                             if (stationSerial != null && !stationSerial.isEmpty()) {
                                 responseStr = LacrossePacketUtil.createStationPingResponse(stationSerial,
                                         sensorInterval, historyInterval, lcdBrightness,
-                                        interceptorService.getLastHistoryAddress(mac));
+                                        interceptorService.getLastHistoryAddress(gatewaySn));
                             } else {
                                 logger.debug("station serial number not found");
                             }
@@ -160,14 +187,14 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                             // sensor ping
                             final int sensorId = Integer.parseInt(pktType.substring(1, 2));
                             final List<String> sensorSerials = (List<String>) configMap.getValue();
-                            if (sensorSerials != null && !sensorSerials.get(sensorId).isEmpty()) {
+                            if (sensorSerials != null && !sensorSerials.get(sensorId - 1).isEmpty()) {
                                 responseStr = LacrossePacketUtil.createSensorPingResponse(sensorId,
-                                        sensorSerials.get(sensorId), sensorInterval);
+                                        sensorSerials.get(sensorId - 1), sensorInterval);
                             } else {
                                 logger.debug("sensor serial number not found");
                             }
                         } else {
-                            logger.debug("gateway configMap not found for mac: {}", mac);
+                            logger.debug("gateway configMap not found for gatewaySn: {}", gatewaySn);
                         }
                     }
                     break;
@@ -175,21 +202,21 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                     // unknown. gateway sends 14 bytes.
                     // the first 8 bytes are the serial 7fffxxxxxxxx
                     if (!data.isEmpty()) {
-                        String sn = LacrossePacketUtil.decodeSerial(data.substring(0, 8));
+                        final String sn = LacrossePacketUtil.decodeSerial(data.substring(0, 8));
                         if (sn.startsWith("7fff") && EMPTY_SERIAL.equals(stationSerial)) {
                             logger.debug("using serial {}", sn);
                             stationSerial = sn;
                         }
                         if (stationSerial.equals(sn)) {
                             flags = "1C:00";
-                            logger.debug("responded to msg 01:14 mac={} sn={} ({})", mac, sn,
+                            logger.debug("responded to msg 01:14 gatewaySn={} sn={} ({})", gatewaySn, sn,
                                     LacrossePacketUtil.fmtBytes(data));
                         } else {
-                            logger.debug("ignored msg 01:14 mac={} sn={} ({})", mac, sn,
+                            logger.debug("ignored msg 01:14 gatewaySn={} sn={} ({})", gatewaySn, sn,
                                     LacrossePacketUtil.fmtBytes(data));
                         }
                     } else {
-                        logger.debug("ignored msg 01:14 with no serial mac={} ({})", mac,
+                        logger.debug("ignored msg 01:14 with no serial gatewaySn={} ({})", gatewaySn,
                                 LacrossePacketUtil.fmtBytes(data));
                     }
                     break;
@@ -198,7 +225,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                     // station registration. gateway sends 13 bytes.
                     // the first 8 bytes are the serial 7fffxxxxxxxx
                     if (data.length() >= 8) {
-                        String sn = LacrossePacketUtil.decodeSerial(data.substring(0, 8));
+                        final String sn = LacrossePacketUtil.decodeSerial(data.substring(0, 8));
                         if (sn.startsWith("7fff") && EMPTY_SERIAL.equals(stationSerial)) {
                             logger.debug("using serial {}", sn);
                             stationSerial = sn;
@@ -209,26 +236,26 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                         }
                         if (UNREGISTERED_SERIAL.equals(sn)) {
                             if (stationSerial.startsWith("7fff")) {
-                                logger.debug("assigning serial {} to unregistered station mac={} ({})", stationSerial,
-                                        mac, LacrossePacketUtil.fmtBytes(data));
+                                logger.debug("assigning serial {} to unregistered station sn={} ({})", stationSerial,
+                                        gatewaySn, LacrossePacketUtil.fmtBytes(data));
                                 doReply = true;
                             } else {
                                 // FIXME: generate a new registration key
-                                logger.debug("ignored unregistered station mac={} ({})", mac,
+                                logger.debug("ignored unregistered station gatewaySn={} ({})", gatewaySn,
                                         LacrossePacketUtil.fmtBytes(data));
                             }
                         }
                         if (doReply) {
                             flags = "14:00";
                             responseStr = LacrossePacketUtil.createStationRegResponse(sn, lcdBrightness);
-                            logger.debug("responded to msg 7F:10 mac={} sn={} ({})", mac, sn,
+                            logger.debug("responded to msg 7F:10 gatewaySn={} sn={} ({})", gatewaySn, sn,
                                     LacrossePacketUtil.fmtBytes(data));
                         } else {
-                            logger.debug("ignored msg 7F:10 mac={} sn={} ({})", mac, sn,
+                            logger.debug("ignored msg 7F:10 gatewaySn={} sn={} ({})", gatewaySn, sn,
                                     LacrossePacketUtil.fmtBytes(data));
                         }
                     } else {
-                        logger.debug("ignored msg 7F:10 with no serial mac={} ({})", mac,
+                        logger.debug("ignored msg 7F:10 with no serial gatewaySn={} ({})", gatewaySn,
                                 LacrossePacketUtil.fmtBytes(data));
                     }
                     break;
@@ -239,17 +266,18 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                 case "05:01":
                     // data packet
                     flags = "00:00"; // also observed 00:01
+                    isPing = true;
                     if (!data.isEmpty()) {
                         if ((data.charAt(0) & 0xFF) == 0x01) {
                             // this is a current conditions packet, process it
-                            interceptorService.dispatchReceivedGatewayData(mac, pktType,
+                            interceptorService.dispatchReceivedGatewayData(gatewaySn, pktType,
                                     LacrossePacketUtil.toHex(data));
                         } else if ((data.charAt(0) & 0xFF) == 0x21) {
                             // this is a history packet, get the history address
-                            int caddr = ((data.charAt(4) & 0xFF) * 256) + (data.charAt(5) & 0xFF);
-                            int naddr = ((data.charAt(6) & 0xFF) * 256) + (data.charAt(7) & 0xFF);
+                            final int caddr = ((data.charAt(4) & 0xFF) * 256) + (data.charAt(5) & 0xFF);
+                            final int naddr = ((data.charAt(6) & 0xFF) * 256) + (data.charAt(7) & 0xFF);
 
-                            interceptorService.saveLastHistoryAddress(mac, caddr);
+                            interceptorService.saveLastHistoryAddress(gatewaySn, caddr);
                             logger.debug("current_addr=0x{}x next_addr=0x{}x", String.format("%04", caddr),
                                     String.format("%04", naddr));
                         } else {
@@ -261,6 +289,16 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
                     break;
                 default:
                     logger.debug("unknown data packet type: {}", pktType);
+            }
+
+            if (isPing) {
+                interceptorService.dispatchReceivedPing(gatewaySn);
+            }
+
+            // save connection information of gateways not configured in openHab to display on the user page
+            if (isGwCheck && !interceptorService.getConfigMaps().stream().filter(map -> gatewaySn.equals(map.getKey()))
+                    .findFirst().isPresent()) {
+                interceptorService.putUnconfiguredGatewayInfo(gatewaySn, request.getRemoteAddr());
             }
         } else {
             logger.debug("unknown format for HTTP_IDENTIFY: {}", header);
@@ -291,21 +329,36 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
      */
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
-        StringBuilder html = new StringBuilder();
-        html.append("<html>\n<h1>LacrosseGatewayInterceptorServlet - active</h1>");
-        html.append("<h3>Configured Gateways: </h3>\n<ul>");
+        final StringBuilder html = new StringBuilder(
+                "<!doctype html>\n<html>\n<h1>LacrosseGatewayInterceptorServlet - active</h1>\n");
 
+        final Map<String, String> unconfiguredGateways = interceptorService.getUnconfiguredGatewayMap();
+        if (!unconfiguredGateways.isEmpty()) {
+            html.append("<h3>Detected Gateways not configured in openHAB:</h3>\n<ul>\n");
+            for (Map.Entry<String, String> unconfiguredGeteway : unconfiguredGateways.entrySet()) {
+                html.append("\t<li>Gateway s/n ");
+                html.append(unconfiguredGeteway.getKey());
+                html.append(" <span style=\"color: #18864b\">online!</span> - <a href=\"http://");
+                html.append(unconfiguredGeteway.getValue());
+                html.append("/\" target=\"_blank\">status page</a></li>\n");
+            }
+            html.append("</ul>\n");
+        }
+
+        html.append("<h3>Configured Gateways:</h3>\n<ul>\n");
         interceptorService.getConfigMaps().forEach(configMap -> {
-            html.append("\t<li>Gateway ");
+            html.append("\t<li>Gateway s/n ");
             html.append(configMap.getKey());
             if (interceptorService.getGatewayIpAddress(configMap.getKey()) != null) {
                 html.append(" <span style=\"color: #18864b\">online!</span> - <a href=\"http://");
                 html.append(interceptorService.getGatewayIpAddress(configMap.getKey()));
                 html.append("/\" target=\"_blank\">status page</a>\n");
+            } else {
+                html.append("\n");
             }
 
             if (configMap.getValue() instanceof String) {
-                html.append("\t\t<ul><li>Weather Station - ");
+                html.append("\t\t<ul><li>Weather Station s/n ");
                 html.append(configMap.getValue());
                 html.append("</li></ul>\n\t</li>\n");
             }
@@ -313,24 +366,26 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
             if ((configMap.getValue() instanceof List<?>)) {
                 final List<String> sensorSerials = (List<String>) configMap.getValue();
 
-                if (!sensorSerials.isEmpty()) {
+                if (sensorSerials != null && !sensorSerials.isEmpty()) {
                     html.append("\t\t<ol>\n");
                     sensorSerials.forEach(sensor -> {
-                        html.append("\t\t\t<li>Sensor - ");
-                        html.append(sensor);
-                        html.append("</li>\n");
+                        if (!sensor.isEmpty()) {
+                            html.append("\t\t\t<li>Sensor s/n ");
+                            html.append(sensor);
+                            html.append("</li>\n");
+                        }
                     });
                     html.append("\t\t</ol>\n\t</li>\n");
                 }
             }
-
         });
         if (interceptorService.getConfigMaps().isEmpty()) {
             html.append("\t<li>None - check <a href=\"/settings/things/\" target=\"_blank\">openHAB things</a></li>\n");
         }
-        html.append("</ul>\n<br/><br/>\n");
+        html.append("</ul>\n");
+
         html.append(
-                "<a href=\"https://github.com/mlobstein/openhab-addons/tree/lacrosse/bundles/org.openhab.binding.lacrosse#readme\" target=\"_blank\">documentation</a>\n</html>");
+                "<br/>\n<a href=\"https://github.com/mlobstein/openhab-addons/tree/lacrosse/bundles/org.openhab.binding.lacrosse#readme\" target=\"_blank\">documentation</a>\n</html>");
 
         response.setContentType("text/html;");
         response.getWriter().println(html.toString());

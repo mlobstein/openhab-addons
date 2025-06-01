@@ -40,8 +40,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  * The {@code GatewayInterceptorService} class manages the {@link LacrosseGatewayInterceptorServlet} and forwards
- * received data
- * packets to the handlers.
+ * received data packets to the handlers.
  *
  * @author Michael Lobstein - Initial contribution
  */
@@ -57,6 +56,7 @@ public class LacrosseGatewayInterceptorService {
 
     Map<String, Integer> lastHistoryAddressMap = new HashMap<String, Integer>();
     Map<String, String> gatewayIpAddressMap = new HashMap<String, String>();
+    Map<String, String> unconfiguredGatewayIpAddressMap = new HashMap<String, String>();
 
     @Activate
     protected void activate(ComponentContext componentContext, Map<String, Object> properties) {
@@ -94,16 +94,28 @@ public class LacrosseGatewayInterceptorService {
     }
 
     /**
-     * Dispatches the received Lacrosse data packet intercepted from the GW1000U gateway to the handlers
+     * Dispatches a ping to the handlers when non-data packets are received by the GW1000U gateway
      *
-     * @param mac The mac address of the gateway that sent the packet
+     * @param gatewaySn The serial number of the gateway that received the packet
+     *
+     */
+    public void dispatchReceivedPing(String gatewaySn) {
+        getLacrosseHandlers().forEach(handler -> {
+            handler.handlePing(gatewaySn);
+        });
+    }
+
+    /**
+     * Dispatches the Lacrosse data packet received by the GW1000U gateway to the handlers
+     *
+     * @param gatewaySn The serial number of the gateway that received the packet
      * @param pktTyp The type of packet received (current, history, etc.)
      * @param data A string containing the data packet received
      *
      */
-    public void dispatchReceivedGatewayData(String mac, String pktType, String data) {
+    public void dispatchReceivedGatewayData(String gatewaySn, String pktType, String data) {
         getLacrosseHandlers().forEach(handler -> {
-            handler.handleDataPacket(mac, pktType, data);
+            handler.handleDataPacket(gatewaySn, pktType, data);
         });
     }
 
@@ -115,21 +127,29 @@ public class LacrosseGatewayInterceptorService {
         return configMaps;
     }
 
-    public void saveLastHistoryAddress(String mac, Integer lastHistoryAddres) {
-        lastHistoryAddressMap.put(mac, lastHistoryAddres);
+    public void saveLastHistoryAddress(String gatewaySn, Integer lastHistoryAddres) {
+        lastHistoryAddressMap.put(gatewaySn, lastHistoryAddres);
     }
 
-    public Integer getLastHistoryAddress(String mac) {
-        final Integer lastHistoryAddressLocal = lastHistoryAddressMap.get(mac);
+    public Integer getLastHistoryAddress(String gatewaySn) {
+        final Integer lastHistoryAddressLocal = lastHistoryAddressMap.get(gatewaySn);
         return lastHistoryAddressLocal != null ? lastHistoryAddressLocal : 0;
     }
 
-    public void putGatewayIpAddress(String mac, String ipAddress) {
-        gatewayIpAddressMap.put(mac, ipAddress);
+    public void putGatewayIpAddress(String gatewaySn, String ipAddress) {
+        gatewayIpAddressMap.put(gatewaySn, ipAddress);
     }
 
-    public @Nullable String getGatewayIpAddress(String mac) {
-        return gatewayIpAddressMap.get(mac);
+    public @Nullable String getGatewayIpAddress(String gatewaySn) {
+        return gatewayIpAddressMap.get(gatewaySn);
+    }
+
+    public void putUnconfiguredGatewayInfo(String gatewaySn, String ipAddress) {
+        unconfiguredGatewayIpAddressMap.put(gatewaySn, ipAddress);
+    }
+
+    public Map<String, String> getUnconfiguredGatewayMap() {
+        return unconfiguredGatewayIpAddressMap;
     }
 
     /**

@@ -41,8 +41,6 @@ import org.openhab.core.thing.ThingStatus;
 import org.openhab.core.thing.binding.BaseThingHandler;
 import org.openhab.core.types.Command;
 import org.openhab.core.types.UnDefType;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * The {@link LacrosseHandler} is responsible for handling commands, which are
@@ -53,11 +51,9 @@ import org.slf4j.LoggerFactory;
 @NonNullByDefault
 public class LacrosseHandler extends BaseThingHandler {
 
-    private final Logger logger = LoggerFactory.getLogger(LacrosseHandler.class);
-
     private @Nullable LacrosseConfiguration config;
     private LacrosseDataHandler dataHandler;
-    private String gatewayMac = "";
+    private String gatewaySn = "";
     private SimpleEntry<String, ?> configMap = new AbstractMap.SimpleEntry<String, String>("", "");
 
     public LacrosseHandler(Thing thing) {
@@ -71,13 +67,13 @@ public class LacrosseHandler extends BaseThingHandler {
         final LacrosseConfiguration configLocal = config;
 
         if (configLocal != null) {
-            this.gatewayMac = configLocal.gatewayMac;
+            this.gatewaySn = configLocal.gatewaySn;
 
             if (THING_TYPE_WEATHER_STATION.equals(this.getThing().getThingTypeUID())) {
-                this.configMap = new AbstractMap.SimpleEntry<String, String>(configLocal.gatewayMac,
+                this.configMap = new AbstractMap.SimpleEntry<String, String>(configLocal.gatewaySn,
                         configLocal.stationSn);
             } else if (THING_TYPE_SENSOR.equals(this.getThing().getThingTypeUID())) {
-                this.configMap = new AbstractMap.SimpleEntry<>(configLocal.gatewayMac, List.of(configLocal.sensor1sn,
+                this.configMap = new AbstractMap.SimpleEntry<>(configLocal.gatewaySn, List.of(configLocal.sensor1sn,
                         configLocal.sensor2sn, configLocal.sensor3sn, configLocal.sensor4sn, configLocal.sensor5sn));
             }
         }
@@ -85,34 +81,36 @@ public class LacrosseHandler extends BaseThingHandler {
         updateStatus(ThingStatus.UNKNOWN);
     }
 
-    public <T> SimpleEntry<String, String> getStationConfigMap(String gatewayMac, String stationSn) {
-        return new AbstractMap.SimpleEntry<String, String>(gatewayMac, stationSn);
-    }
-
     @Override
     public void handleCommand(ChannelUID channelUID, Command command) {
-        logger.debug("No commands can be processed - All channels are read-only");
+        // Do nothing - all channels are read-only
     }
 
     public SimpleEntry<String, ?> getConfigMap() {
         return this.configMap;
     }
 
-    public void handleDataPacket(String mac, String pktType, String data) {
+    public void handlePing(String gatewaySn) {
         // ignore packets intended for other Lacrosse things
-        if (!gatewayMac.equals(mac)) {
+        if (!this.gatewaySn.equals(gatewaySn)) {
+            return;
+        }
+        // Any pings received for this Thing's stationSn causes it to go online.
+        // We do this so the Thing goes online quicker as the data packets arrive less often.
+        updateStatus(ThingStatus.ONLINE);
+    }
+
+    public void handleDataPacket(String gatewaySn, String pktType, String data) {
+        // ignore packets intended for other Lacrosse things
+        if (!this.gatewaySn.equals(gatewaySn)) {
             return;
         }
 
-        logger.debug("Handler recived packet: %s, %s, %s");
-
-        final Optional<LacrosseDto> dataDto = dataHandler.processDataPacket(mac, pktType, data);
+        final Optional<LacrosseDto> dataDto = dataHandler.processDataPacket(gatewaySn, pktType, data);
         // ignore packets that could not be parsed
         if (!dataDto.isPresent()) {
             return;
-        }
-
-        if (dataDto.get() instanceof LacrosseWeatherData) {
+        } else if (dataDto.get() instanceof LacrosseWeatherData) {
             final LacrosseWeatherData weatherData = (LacrosseWeatherData) dataDto.get();
 
             doUpdate(TEMPERATURE_IN, weatherData.getTemperatureIn(), SIUnits.CELSIUS);
@@ -144,16 +142,16 @@ public class LacrosseHandler extends BaseThingHandler {
             doUpdate(getChannel(sensorData, LAST_SEEN_DATE_TIME), sensorData.getLastSeen());
         }
 
-        // the first packet successfully processed by this Thing causes it to go online
+        // A packet processed by this Thing will also cause it to go online
         updateStatus(ThingStatus.ONLINE);
     }
 
-    // gets the group channel id based on the sensor id and channel name, i.e. 'sensor1#temperature'
+    // Gets the group channel id based on the sensor id and channel name, i.e. 'sensor1#temperature'
     private String getChannel(LacrosseSensorData sensorData, String channel) {
         return SENSOR + sensorData.getSensorId() + "#" + channel;
     }
 
-    // convenience methods to abstract calling updateState() and sends UNDEF state for null values
+    // Convenience methods to abstract calling updateState() and sends UNDEF state for null values
     private void doUpdate(String channel, @Nullable Double data, Unit<?> unit) {
         updateState(channel, data == null ? UnDefType.UNDEF : new QuantityType<>(data, unit));
     }

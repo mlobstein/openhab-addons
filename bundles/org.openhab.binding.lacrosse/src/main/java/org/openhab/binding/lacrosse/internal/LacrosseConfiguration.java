@@ -21,7 +21,7 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class LacrosseConfiguration {
-    public String gatewayMac = "";
+    public String gatewaySn = "";
     public String stationSn = "";
     public String sensor1sn = "";
     public String sensor2sn = "";

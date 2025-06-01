@@ -33,10 +33,9 @@
 		</channel-groups>
 
 		<config-description>
-			<parameter name="gatewayMac" type="text" required="true">
-				<context>mac-address</context>
-				<label>Gateway MAC address</label>
-				<description>MAC address of the GW1000U gateway used for the TX60-U sensors (without dashes)</description>
+			<parameter name="gatewaySn" type="text" min="8" max="8" required="true">
+				<label>Gateway Serial Number</label>
+				<description>The serial number of the GW1000U gateway used for the TX60-U sensors</description>
 			</parameter>
 			<parameter name="sensor1sn" type="text" required="true" min="16" max="16">
 				<label>Sensor 1 Serial Number</label>
@@ -103,7 +102,7 @@
 	</channel-type>
 
 	<channel-type id="humidity">
-		<item-type>Number:Dimensionless</item-type>
+		<item-type unitHint="%">Number:Dimensionless</item-type>
 		<label>Humidity</label>
 		<description>Humidity measured at the sensor</description>
 		<category>Humidity</category>
@@ -111,13 +110,13 @@
 			<tag>Measurement</tag>
 			<tag>Humidity</tag>
 		</tags>
-		<state readOnly="true" pattern="%.0f %unit%"/>
+		<state readOnly="true" pattern="%d %unit%"/>
 	</channel-type>
 
 	<channel-type id="heatIndex">
 		<item-type>Number:Temperature</item-type>
 		<label>Heat Index</label>
-		<description>Heat Index calculated from the sensor temperature and humidity </description>
+		<description>Heat Index calculated from the sensor temperature and humidity</description>
 		<state readOnly="true" pattern="%.1f %unit%"/>
 	</channel-type>
 
@@ -128,8 +127,8 @@
 		<state readOnly="true" pattern="%.1f %unit%"/>
 	</channel-type>
 
-	<channel-type id="rfSignalStrength">
-		<item-type>Number</item-type>
+	<channel-type id="rfSignalStrength" advanced="true">
+		<item-type unitHint="%">Number:Dimensionless</item-type>
 		<label>RF Signal Strength</label>
 		<description>Strength of the RF signal from the sensor as received at the gateway</description>
 		<state readOnly="true" pattern="%d %unit%"/>
