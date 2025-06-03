@@ -11,12 +11,12 @@ The Gateway Advanced Setup (GAS) utility from La Crosse is used to change the ga
 After this setting is changed in the gateway all data transmitted will be re-directed to openHAB.
 Note that this also prevents any of these devices used with openHAB from using La Crosse's online services (lacrossealertsmobile.com).
 
-If you have any intention of using La Crosse's alerts service, you should register your station with La Crosse before using this binding.
+If you have any intention of using La Crosse's alerts service, you should register your weather station with La Crosse before using this binding.
 
 The routines used to allow communication with the gateway were adapted from [weewx-interceptor](https://github.com/matthewwall/weewx-interceptor) and translated into Java using GitHub Copilot.
 
 
-Most of the knowledge on how the GW1000U communicates was originally discussed here: <https://www.wxforum.net/index.php?topic=14299.0>.
+Most of the knowledge on how the GW1000U communicates was originally discussed here: <https://www.wxforum.net/index.php?topic=14299.0>
 
 ## Discovery
 
@@ -30,12 +30,14 @@ The easiest way to obtain the serial number for the C84612 weather station is to
 
 The serial number for a TX60-U sensor can be found on the sticker on the back of the sensor.
 
+Once the things are configured properly, they will change to ONLINE status upon receipt of data from the gateway. Note however the status will never change to OFFLINE.
+
 ## Supported Things
 
 ### C84612 Weather Station
 
 **Thing type ID:** `weatherstation`  
-Receives all measurements from the weather station and its outdoor sensors (wind, themo and rain).
+Receives all measurements from the weather station and its outdoor sensors (Wind, Rain and Temp).
 The weather station cannot be used along with TX60-U sensors on a single GW1000U gateway.
 Using the weather station and TX60-U sensors requires at least 2 gateways.
 
@@ -116,44 +118,46 @@ lacrosse:sensor:mysensors "Temperature Sensors" [ gatewaySn="AABBCCDD", sensor1s
 
 ### `lacrosse.items` Example
 
+Note that the `expire` directives will cause the state of the items to change to UNDEF if no updates are received for more than 45 minutes.
+
 ```java
 // Weather Station Items
-Number:Temperature Weather_Indoor_Temp "Indoor Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:weatherstation:ws1:temperatureIn" }
-Number:Dimensionless Weather_Indoor_Humidity "Indoor Humidity [%d %%]" <humidity> { channel="lacrosse:weatherstation:ws1:humidityIn" }
-Number:Temperature Weather_Outdoor_Temp "Outdoor Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:weatherstation:ws1:temperatureOut" }
-Number:Dimensionless Weather_Outdoor_Humidity "Outdoor Humidity [%d %%]" <humidity> { channel="lacrosse:weatherstation:ws1:humidityOut" }
-Number:Temperature Weather_Wind_Chill "Wind Chill [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:windChill" }
-Number:Length Weather_Rain_Total "Total Rainfall [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:rainTotal" }
-Number:Length Weather_Rain "Rainfall [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:rain" }
-Number:Angle Weather_Wind_Direction "Wind Direction [%d %unit%]" { channel="lacrosse:weatherstation:ws1:windDirection" }
-Number:Speed Weather_Wind_Speed "Wind Speed [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:windSpeed" }
-Number:Angle Weather_Gust_Direction "Gust Direction [%d %unit%]" { channel="lacrosse:weatherstation:ws1:gustDirection" }
-Number:Speed Weather_Gust_Speed "Gust Speed [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:gustSpeed" }
-Number:Pressure Weather_Barometer "Barometric Pressure [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:barometer" }
-Number Weather_RF_Signal "RF Signal Strength [%d %%]" { channel="lacrosse:weatherstation:ws1:rfSignalStrength" }
-String Weather_Status "Status [%s]" { channel="lacrosse:weatherstation:ws1:status" }
-String Weather_Forecast "Forecast [%s]" { channel="lacrosse:weatherstation:ws1:forecast" }
-DateTime Weather_Last_Seen "Last Seen [%1$tF %1$tT]" { channel="lacrosse:weatherstation:ws1:lastSeenDateTime" }
+Number:Temperature Weather_Indoor_Temp "Indoor Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:weatherstation:ws1:temperatureIn", expire="45m" }
+Number:Dimensionless Weather_Indoor_Humidity "Indoor Humidity [%d %%]" <humidity> { channel="lacrosse:weatherstation:ws1:humidityIn", expire="45m" }
+Number:Temperature Weather_Outdoor_Temp "Outdoor Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:weatherstation:ws1:temperatureOut", expire="45m" }
+Number:Dimensionless Weather_Outdoor_Humidity "Outdoor Humidity [%d %%]" <humidity> { channel="lacrosse:weatherstation:ws1:humidityOut", expire="45m" }
+Number:Temperature Weather_Wind_Chill "Wind Chill [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:windChill", expire="45m" }
+Number:Length Weather_Rain_Total "Total Rainfall [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:rainTotal", expire="45m" }
+Number:Length Weather_Rain "Rainfall [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:rain", expire="45m" }
+Number:Angle Weather_Wind_Direction "Wind Direction [%d %unit%]" { channel="lacrosse:weatherstation:ws1:windDirection", expire="45m" }
+Number:Speed Weather_Wind_Speed "Wind Speed [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:windSpeed", expire="45m" }
+Number:Angle Weather_Gust_Direction "Gust Direction [%d %unit%]" { channel="lacrosse:weatherstation:ws1:gustDirection", expire="45m" }
+Number:Speed Weather_Gust_Speed "Gust Speed [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:gustSpeed", expire="45m" }
+Number:Pressure Weather_Barometer "Barometric Pressure [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:barometer", expire="45m" }
+Number Weather_RF_Signal "RF Signal Strength [%d %%]" { channel="lacrosse:weatherstation:ws1:rfSignalStrength", expire="45m" }
+String Weather_Status "Status [%s]" { channel="lacrosse:weatherstation:ws1:status", expire="45m" }
+String Weather_Forecast "Forecast [%s]" { channel="lacrosse:weatherstation:ws1:forecast", expire="45m" }
+DateTime Weather_Last_Seen "Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:weatherstation:ws1:lastSeenDateTime" }
 
 // TX60-U Sensor 1 Items
-Number:Temperature TX60U1_Temperature "Sensor 1 Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor1#temperature" }
-Number:Temperature TX60U1_External_Temperature "Sensor 1 External Temp [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor1#temperatureProbe" }
-Number:Dimensionless TX60U1_Humidity "Sensor 1 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor1#humidity" }
-Number:Temperature TX60U1_Heat_Index "Sensor 1 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#heatIndex" }
-Number:Temperature TX60U1_Dew_Point "Sensor 1 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#dewPoint" }
-Number TX60U1_RF_Signal "Sensor 1 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor1#rfSignalStrength" }
+Number:Temperature TX60U1_Temperature "Sensor 1 Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor1#temperature", expire="45m" }
+Number:Temperature TX60U1_External_Temperature "Sensor 1 External Temp [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor1#temperatureProbe", expire="45m" }
+Number:Dimensionless TX60U1_Humidity "Sensor 1 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor1#humidity", expire="45m" }
+Number:Temperature TX60U1_Heat_Index "Sensor 1 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#heatIndex", expire="45m" }
+Number:Temperature TX60U1_Dew_Point "Sensor 1 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#dewPoint", expire="45m" }
+Number TX60U1_RF_Signal "Sensor 1 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor1#rfSignalStrength", expire="45m" }
 String TX60U1_Battery_Status "Sensor 1 Battery [%s]" { channel="lacrosse:sensor:mysensors:sensor1#batteryStatus" }
-DateTime TX60U1_Last_Seen "Sensor 1 Last Seen [%1$tF %1$tT]" { channel="lacrosse:sensor:mysensors:sensor1#lastSeenDateTime" }
+DateTime TX60U1_Last_Seen "Sensor 1 Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:sensor:mysensors:sensor1#lastSeenDateTime" }
 
 // TX60-U Sensor 2 Items
-Number:Temperature TX60U2_Temperature "Sensor 2 Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor2#temperature" }
-Number:Temperature TX60U2_External_Temperature "Sensor 2 External Temp [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor2#temperatureProbe" }
-Number:Dimensionless TX60U2_Humidity "Sensor 2 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor2#humidity" }
-Number:Temperature TX60U2_Heat_Index "Sensor 2 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#heatIndex" }
-Number:Temperature TX60U2_Dew_Point "Sensor 2 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#dewPoint" }
-Number TX60U2_RF_Signal "Sensor 2 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor2#rfSignalStrength" }
+Number:Temperature TX60U2_Temperature "Sensor 2 Temperature [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor2#temperature", expire="45m" }
+Number:Temperature TX60U2_External_Temperature "Sensor 2 External Temp [%.1f %unit%]" <temperature> { channel="lacrosse:sensor:mysensors:sensor2#temperatureProbe", expire="45m" }
+Number:Dimensionless TX60U2_Humidity "Sensor 2 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor2#humidity", expire="45m" }
+Number:Temperature TX60U2_Heat_Index "Sensor 2 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#heatIndex", expire="45m" }
+Number:Temperature TX60U2_Dew_Point "Sensor 2 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#dewPoint", expire="45m" }
+Number TX60U2_RF_Signal "Sensor 2 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor2#rfSignalStrength", expire="45m" }
 String TX60U2_Battery_Status "Sensor 2 Battery [%s]" { channel="lacrosse:sensor:mysensors:sensor2#batteryStatus" }
-DateTime TX60U2_Last_Seen "Sensor 2 Last Seen [%1$tF %1$tT]" { channel="lacrosse:sensor:mysensors:sensor2#lastSeenDateTime" }
+DateTime TX60U2_Last_Seen "Sensor 2 Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:sensor:mysensors:sensor2#lastSeenDateTime" }
 
 // Add more TX60-U sensor items as needed
 ```

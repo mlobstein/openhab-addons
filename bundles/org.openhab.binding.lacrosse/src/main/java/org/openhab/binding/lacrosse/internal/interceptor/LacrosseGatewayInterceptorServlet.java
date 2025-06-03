@@ -330,7 +330,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
     @Override
     public void doGet(HttpServletRequest request, HttpServletResponse response) throws IOException {
         final StringBuilder html = new StringBuilder(
-                "<!doctype html>\n<html>\n<h1>LacrosseGatewayInterceptorServlet - active</h1>\n");
+                "<!doctype html>\n<html>\n<head>\n\t<title>LacrosseGatewayInterceptorServlet</title>\n</head>\n<body>\n<h1>LacrosseGatewayInterceptorServlet - active</h1>\n");
 
         final Map<String, String> unconfiguredGateways = interceptorService.getUnconfiguredGatewayMap();
         if (!unconfiguredGateways.isEmpty()) {
@@ -385,7 +385,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
         html.append("</ul>\n");
 
         html.append(
-                "<br/>\n<a href=\"https://github.com/mlobstein/openhab-addons/tree/lacrosse/bundles/org.openhab.binding.lacrosse#readme\" target=\"_blank\">documentation</a>\n</html>");
+                "<br/>\n<a href=\"https://github.com/mlobstein/openhab-addons/tree/lacrosse/bundles/org.openhab.binding.lacrosse#readme\" target=\"_blank\">documentation</a>\n</body>\n</html>");
 
         response.setContentType("text/html;");
         response.getWriter().println(html.toString());
