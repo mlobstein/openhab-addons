@@ -7,7 +7,7 @@
 	<thing-type id="sensor">
 		<label>La Crosse TX60</label>
 		<description>La Crosse TX60-U sensors</description>
-		<!--<semantic-equipment-tag>WeatherStation</semantic-equipment-tag> -->
+		<!--<semantic-equipment-tag>TemperatureSensor</semantic-equipment-tag> -->
 
 		<channel-groups>
 			<channel-group id="sensor1" typeId="sensorGroup">
