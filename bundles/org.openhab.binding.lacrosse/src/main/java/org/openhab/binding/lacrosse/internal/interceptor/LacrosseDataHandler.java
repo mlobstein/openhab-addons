@@ -28,6 +28,9 @@ import org.slf4j.LoggerFactory;
  * The {@link LacrosseDataHandler} is responsible for processing the weather and sensor data packets received from the
  * GW1000U ERF gateway
  *
+ * The communication routines were adapted from https://github.com/matthewwall/weewx-interceptor and translated from
+ * Python using GitHub Copilot.
+ *
  * @author Michael Lobstein - Initial contribution
  */
 @NonNullByDefault

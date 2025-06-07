@@ -22,6 +22,9 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
 /**
  * The {@code PacketUtil} class contains utility methods for processing packets from/to the GW1000U
  *
+ * The communication routines were adapted from https://github.com/matthewwall/weewx-interceptor and translated from
+ * Python using GitHub Copilot.
+ *
  * @author Michael Lobstein - Initial contribution
  */
 @NonNullByDefault
@@ -37,7 +40,7 @@ public class LacrossePacketUtil {
         if (data.isEmpty()) {
             return "";
         }
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length(); i++) {
             if (i > 0) {
                 sb.append(" ");
@@ -49,7 +52,7 @@ public class LacrossePacketUtil {
 
     protected static String createGatewayRegResponse(String server) {
         // 252-byte reply
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
 
         // 8 bytes of 0
         for (int i = 0; i < 8; i++) {
@@ -60,7 +63,7 @@ public class LacrossePacketUtil {
         sb.append(leftJustify(server, 0x98, (char) 0));
 
         // ("%s%s%s" % (server, chr(0), server)) left-justified to 0x56 (86) bytes, padded with 0s
-        String s0 = server + (char) 0 + server;
+        final String s0 = server + (char) 0 + server;
         sb.append(leftJustify(s0, 0x56, (char) 0));
 
         // 5 bytes of 0
@@ -75,7 +78,7 @@ public class LacrossePacketUtil {
     }
 
     private static String leftJustify(String s, int width, char pad) {
-        StringBuilder sb = new StringBuilder(s);
+        final StringBuilder sb = new StringBuilder(s);
         while (sb.length() < width) {
             sb.append(pad);
         }
@@ -87,9 +90,9 @@ public class LacrossePacketUtil {
 
     protected static String createGatewayPingResponse(int interval) {
         // 18-byte reply
-        int hi = interval / 256;
-        int lo = interval % 256;
-        StringBuilder sb = new StringBuilder();
+        final int hi = interval / 256;
+        final int lo = interval % 256;
+        final StringBuilder sb = new StringBuilder();
 
         // 16 bytes of 0
         for (int i = 0; i < 16; i++) {
@@ -109,10 +112,10 @@ public class LacrossePacketUtil {
             int brightness, int lastHistoryAddress) {
         // 38-byte reply
         // sensor_interval is in minutes
-        StringBuilder payload = new StringBuilder();
+        final StringBuilder payload = new StringBuilder();
 
-        int hi = lastHistoryAddress / 256;
-        int lo = lastHistoryAddress % 256;
+        final int hi = lastHistoryAddress / 256;
+        final int lo = lastHistoryAddress % 256;
 
         payload.append((char) 0x01);
         payload.append(encodeSerial(serial)); // 8 bytes starting with 7fff
@@ -133,7 +136,7 @@ public class LacrossePacketUtil {
         payload.append((char) 0x00).append((char) 0x00);
         payload.append((char) 0x00);
 
-        int cs = checksum16p7(payload.toString());
+        final int cs = checksum16p7(payload.toString());
         payload.append((char) cs >> 8).append((char) cs & 0xff);
 
         return payload.toString();
@@ -142,7 +145,7 @@ public class LacrossePacketUtil {
     protected static String createSensorPingResponse(int sensorId, String sensorSerial, int sensorInterval) {
         // 19-byte reply
         // sensor_interval is in minutes
-        StringBuilder payload = new StringBuilder();
+        final StringBuilder payload = new StringBuilder();
 
         // 1 byte: sensor ID
         payload.append((char) sensorId);
@@ -158,7 +161,7 @@ public class LacrossePacketUtil {
         payload.append((char) sensorInterval);
 
         // 2 bytes: checksum16p7
-        int cs = checksum16p7(payload.toString());
+        final int cs = checksum16p7(payload.toString());
         payload.append((char) ((cs >> 8) & 0xFF));
         payload.append((char) (cs & 0xFF));
 
@@ -166,7 +169,7 @@ public class LacrossePacketUtil {
     }
 
     protected static String createStationRegResponse(String serial, int brightness) {
-        StringBuilder payload = new StringBuilder();
+        final StringBuilder payload = new StringBuilder();
 
         // 38-byte reply
         // FIXME: this looks a lot like the ping response, with the checksum
@@ -240,7 +243,7 @@ public class LacrossePacketUtil {
 
     // Decodes a String containing raw bytes into a hex string
     protected static String decodeSerial(String data) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length(); i++) {
             sb.append(String.format("%02x", (data.charAt(i) & 0xFF)));
         }
@@ -252,10 +255,10 @@ public class LacrossePacketUtil {
         if (sn.length() != 16) {
             throw new IllegalArgumentException("Serial must be 16 hex characters");
         }
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < sn.length(); i += 2) {
-            String byteStr = sn.substring(i, i + 2);
-            int value = Integer.parseInt(byteStr, 16);
+            final String byteStr = sn.substring(i, i + 2);
+            final int value = Integer.parseInt(byteStr, 16);
             sb.append((char) value);
         }
         return sb.toString();
@@ -281,9 +284,9 @@ public class LacrossePacketUtil {
 
     // Encodes a two-digit decimal string into a BCD byte
     private static int encodeBcd(String x) {
-        int val = Integer.parseInt(x);
+        final int val = Integer.parseInt(x);
         int msb = val / 10;
-        int lsb = val % 10;
+        final int lsb = val % 10;
         if (msb > 10) {
             msb = 10;
         }
@@ -291,7 +294,7 @@ public class LacrossePacketUtil {
     }
 
     protected static String toHex(String data) {
-        StringBuilder sb = new StringBuilder();
+        final StringBuilder sb = new StringBuilder();
         for (int i = 0; i < data.length(); i++) {
             sb.append(String.format("%02x", data.charAt(i) & 0xFF));
         }

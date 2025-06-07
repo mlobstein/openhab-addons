@@ -2,8 +2,7 @@
 
 This binding receives data from La Crosse C84612 weather stations or TX60-U temperature sensors via the hardwired Ethernet GW1000U ERF gateway.
 
-**Please note that this binding is still under development and may not work correctly or at all!**
-**The La Crosse C84612 weather station has not yet been tested with this binding.**
+**Please note that this binding has not yet been tested with the La Crosse C84612 weather station.**
 
 The GW1000U must be configured to use the IP address and web server port of the openHAB server as its Proxyserver in order to use this binding.
 The Gateway Advanced Setup (GAS) utility from La Crosse is used to change the gateway's settings.
@@ -52,24 +51,24 @@ Using the weather station and TX60-U sensors requires at least 2 gateways.
 
 The C84612 Weather Station has the following channels (All channels are read-only):
 
-| Channel ID        | Label                | Item Type             | Description                                       |
-|-------------------|----------------------|-----------------------|---------------------------------------------------|
-| temperatureIn     | Indoor Temperature   | Number:Temperature    | Measured indoor temperature (°C)                  |
-| humidityIn        | Indoor Humidity      | Number:Dimensionless  | Measured indoor humidity (%)                      |
-| temperatureOut    | Outdoor Temperature  | Number:Temperature    | Measured outdoor temperature (°C)                 |
-| humidityOut       | Outdoor Humidity     | Number:Dimensionless  | Measured outdoor humidity (%)                     |
-| windChill         | Wind Chill           | Number:Temperature    | Calculated wind chill temperature (°C)            |
-| rainTotal         | Total Rainfall       | Number:Length         | Total rainfall measured (cm)                      |
-| rain              | Rainfall             | Number:Length         | Rainfall over the latest period  (cm)             |
-| windDirection     | Wind Direction       | Number:Angle          | Current wind direction in degrees (1-360)         |
-| windSpeed         | Wind Speed           | Number:Speed          | Current wind speed (km/h)                         |
-| gustDirection     | Gust Direction       | Number:Angle          | Current gust direction in degrees (1-360)         |
-| gustSpeed         | Gust Speed           | Number:Speed          | Current wind gust speed (km/h)                    |
-| barometer         | Barometric Pressure  | Number:Pressure       | Current barometric pressure (mbar)                |
-| rfSignalStrength  | RF Signal Strength   | Number                | RF signal strength as received at gateway (1-100) |
-| status            | Status               | String                | Status of the weather station??                   |
-| forecast          | Forecast             | String                | Weather forecast??                                |
-| lastSeenDateTime  | Last Seen            | DateTime              | Last time data was received                       |
+| Channel ID        | Label                | Item Type             | Description                                   |
+|-------------------|----------------------|-----------------------|-----------------------------------------------|
+| temperatureIn     | Indoor Temperature   | Number:Temperature    | Measured indoor temperature (°C)              |
+| humidityIn        | Indoor Humidity      | Number:Dimensionless  | Measured indoor humidity (%)                  |
+| temperatureOut    | Outdoor Temperature  | Number:Temperature    | Measured outdoor temperature (°C)             |
+| humidityOut       | Outdoor Humidity     | Number:Dimensionless  | Measured outdoor humidity (%)                 |
+| windChill         | Wind Chill           | Number:Temperature    | Calculated wind chill temperature (°C)        |
+| rainTotal         | Total Rainfall       | Number:Length         | Total rainfall measured (cm)                  |
+| rain              | Rainfall             | Number:Length         | Rainfall over the latest period  (cm)         |
+| windDirection     | Wind Direction       | Number:Angle          | Current wind direction in degrees (1-360)     |
+| windSpeed         | Wind Speed           | Number:Speed          | Current wind speed (km/h)                     |
+| gustDirection     | Gust Direction       | Number:Angle          | Current gust direction in degrees (1-360)     |
+| gustSpeed         | Gust Speed           | Number:Speed          | Current wind gust speed (km/h)                |
+| barometer         | Barometric Pressure  | Number:Pressure       | Current barometric pressure (mbar)            |
+| rfSignalStrength  | RF Signal Strength   | Number:Dimensionless  | RF signal strength as received at gateway (%) |
+| status            | Status               | String                | Status of the weather station??               |
+| forecast          | Forecast             | String                | Weather forecast??                            |
+| lastSeenDateTime  | Last Seen            | DateTime              | Last time data was received                   |
 
 ### TX60-U Sensor
 
@@ -95,16 +94,16 @@ If the sensors were previously connected to the gateway, the sensor serial numbe
 
 Each sensor (1-5) provides the following channels (All channels are read-only):
 
-| Channel ID         | Label               | Item Type             | Description                                      |
-|--------------------|---------------------|-----------------------|--------------------------------------------------|
-| temperature        | Temperature         | Number:Temperature    | Temperature measured at the sensor (°F)          |
-| temperatureProbe   | External Temperature| Number:Temperature    | Temperature measured by the external probe (°F)  |
-| humidity           | Humidity            | Number:Dimensionless  | Humidity measured at the sensor (%)              |
-| heatIndex          | Heat Index          | Number:Temperature    | Calculated heat index (°F)                       |
-| dewPoint           | Dew Point           | Number:Temperature    | Calculated dew point (°F)                        |
-| rfSignalStrength   | RF Signal Strength  | Number                | RF signal strength as received at gateway (1-100)|
-| batteryStatus      | Battery Status      | String                | Battery status (OK or Low)                       |
-| lastSeenDateTime   | Last Seen DateTime  | DateTime              | Last time data was received from the sensor      |
+| Channel ID         | Label               | Item Type             | Description                                     |
+|--------------------|---------------------|-----------------------|-------------------------------------------------|
+| temperature        | Temperature         | Number:Temperature    | Temperature measured at the sensor (°F)         |
+| temperatureProbe   | External Temperature| Number:Temperature    | Temperature measured by the external probe (°F) |
+| humidity           | Humidity            | Number:Dimensionless  | Humidity measured at the sensor (%)             |
+| heatIndex          | Heat Index          | Number:Temperature    | Calculated heat index (°F)                      |
+| dewPoint           | Dew Point           | Number:Temperature    | Calculated dew point (°F)                       |
+| rfSignalStrength   | RF Signal Strength  | Number:Dimensionless  | RF signal strength as received at gateway (%)   |
+| batteryStatus      | Battery Status      | String                | Battery status (OK or Low)                      |
+| lastSeenDateTime   | Last Seen DateTime  | DateTime              | Last time data was received from the sensor     |
 
 ## Full Example
 
@@ -134,7 +133,7 @@ Number:Speed Weather_Wind_Speed "Wind Speed [%.1f %unit%]" { channel="lacrosse:w
 Number:Angle Weather_Gust_Direction "Gust Direction [%d %unit%]" { channel="lacrosse:weatherstation:ws1:gustDirection", expire="45m" }
 Number:Speed Weather_Gust_Speed "Gust Speed [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:gustSpeed", expire="45m" }
 Number:Pressure Weather_Barometer "Barometric Pressure [%.1f %unit%]" { channel="lacrosse:weatherstation:ws1:barometer", expire="45m" }
-Number Weather_RF_Signal "RF Signal Strength [%d %%]" { channel="lacrosse:weatherstation:ws1:rfSignalStrength", expire="45m" }
+Number:Dimensionless Weather_RF_Signal "RF Signal Strength [%d %%]" { channel="lacrosse:weatherstation:ws1:rfSignalStrength", expire="45m" }
 String Weather_Status "Status [%s]" { channel="lacrosse:weatherstation:ws1:status", expire="45m" }
 String Weather_Forecast "Forecast [%s]" { channel="lacrosse:weatherstation:ws1:forecast", expire="45m" }
 DateTime Weather_Last_Seen "Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:weatherstation:ws1:lastSeenDateTime" }
@@ -145,7 +144,7 @@ Number:Temperature TX60U1_External_Temperature "Sensor 1 External Temp [%.1f %un
 Number:Dimensionless TX60U1_Humidity "Sensor 1 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor1#humidity", expire="45m" }
 Number:Temperature TX60U1_Heat_Index "Sensor 1 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#heatIndex", expire="45m" }
 Number:Temperature TX60U1_Dew_Point "Sensor 1 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor1#dewPoint", expire="45m" }
-Number TX60U1_RF_Signal "Sensor 1 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor1#rfSignalStrength", expire="45m" }
+Number:Dimensionless TX60U1_RF_Signal "Sensor 1 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor1#rfSignalStrength", expire="45m" }
 String TX60U1_Battery_Status "Sensor 1 Battery [%s]" { channel="lacrosse:sensor:mysensors:sensor1#batteryStatus" }
 DateTime TX60U1_Last_Seen "Sensor 1 Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:sensor:mysensors:sensor1#lastSeenDateTime" }
 
@@ -155,7 +154,7 @@ Number:Temperature TX60U2_External_Temperature "Sensor 2 External Temp [%.1f %un
 Number:Dimensionless TX60U2_Humidity "Sensor 2 Humidity [%d %%]" <humidity> { channel="lacrosse:sensor:mysensors:sensor2#humidity", expire="45m" }
 Number:Temperature TX60U2_Heat_Index "Sensor 2 Heat Index [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#heatIndex", expire="45m" }
 Number:Temperature TX60U2_Dew_Point "Sensor 2 Dew Point [%.1f %unit%]" { channel="lacrosse:sensor:mysensors:sensor2#dewPoint", expire="45m" }
-Number TX60U2_RF_Signal "Sensor 2 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor2#rfSignalStrength", expire="45m" }
+Number:Dimensionless TX60U2_RF_Signal "Sensor 2 RF Signal [%d %%]" { channel="lacrosse:sensor:mysensors:sensor2#rfSignalStrength", expire="45m" }
 String TX60U2_Battery_Status "Sensor 2 Battery [%s]" { channel="lacrosse:sensor:mysensors:sensor2#batteryStatus" }
 DateTime TX60U2_Last_Seen "Sensor 2 Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1$tM %1$tp]" { channel="lacrosse:sensor:mysensors:sensor2#lastSeenDateTime" }
 
@@ -165,8 +164,7 @@ DateTime TX60U2_Last_Seen "Sensor 2 Last Seen [%1$tA, %1$tm-%1$td-%1$tY %1$tl:%1
 ### `lacrosse.sitemap` Example
 
 ```perl
-sitemap lacrosse label="La Crosse"
-{
+sitemap lacrosse label="La Crosse" {
   Frame label="Weather Station" {
     Text item=Weather_Indoor_Temp icon="temperature"
     Text item=Weather_Indoor_Humidity icon="humidity"

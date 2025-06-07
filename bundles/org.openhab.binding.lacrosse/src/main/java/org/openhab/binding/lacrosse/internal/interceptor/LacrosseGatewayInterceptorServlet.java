@@ -317,7 +317,7 @@ public class LacrosseGatewayInterceptorServlet extends HttpServlet {
         response.setHeader("X-Powered-By", "ASP.NET");
         response.setHeader("Date", LacrossePacketUtil.putResponseDate());
         response.setHeader("Connection", "close");
-        response.getWriter().println(responseStr);
+        response.getWriter().print(responseStr);
     }
 
     /**
