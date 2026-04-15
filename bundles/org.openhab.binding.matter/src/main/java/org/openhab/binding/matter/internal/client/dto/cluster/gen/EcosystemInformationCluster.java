@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 // AUTO-GENERATED, DO NOT EDIT!
 
 package org.openhab.binding.matter.internal.client.dto.cluster.gen;
@@ -30,11 +29,9 @@ public class EcosystemInformationCluster extends BaseCluster {
     public static final int CLUSTER_ID = 0x0750;
     public static final String CLUSTER_NAME = "EcosystemInformation";
     public static final String CLUSTER_PREFIX = "ecosystemInformation";
-    public static final String ATTRIBUTE_CLUSTER_REVISION = "clusterRevision";
     public static final String ATTRIBUTE_DEVICE_DIRECTORY = "deviceDirectory";
     public static final String ATTRIBUTE_LOCATION_DIRECTORY = "locationDirectory";
 
-    public Integer clusterRevision; // 65533 ClusterRevision
     /**
      * This attribute shall contain the list of logical devices represented by a Bridged Node. Most of the time this
      * will contain a single entry, but may grow with more complex device compositions (e.g. another bridge.) An empty
@@ -49,16 +46,35 @@ public class EcosystemInformationCluster extends BaseCluster {
      * LocationDirectory entries shall be removed if there is no DeviceDirectory that references it.
      */
     public List<EcosystemLocationStruct> locationDirectory; // 1 list R F M
-    // Structs
 
-    public class EcosystemDeviceStruct {
+    // Structs
+    /**
+     * The device type and revision define endpoint conformance to a release of a device type definition. See the Data
+     * Model specification for more information.
+     */
+    public static class DeviceTypeStruct {
+        /**
+         * This shall indicate the device type definition.
+         */
+        public Integer deviceType; // devtype-id
+        /**
+         * This is the implemented revision of the device type definition.
+         */
+        public Integer revision; // uint16
+
+        public DeviceTypeStruct(Integer deviceType, Integer revision) {
+            this.deviceType = deviceType;
+            this.revision = revision;
+        }
+    }
+
+    public static class EcosystemDeviceStruct {
         /**
          * This field shall indicate the device’s name, which is provided externally if the user consents. (For example,
          * provided by the user in an ecosystem specific interface.)
          */
         public String deviceName; // string
         /**
-         * This field shall be present and set if the DeviceName field is present.
          * This field shall indicate the timestamp of when the DeviceName was last modified.
          */
         public BigInteger deviceNameLastEdit; // epoch-us
@@ -79,7 +95,7 @@ public class EcosystemInformationCluster extends BaseCluster {
          * associated with this EcosystemDeviceStruct entry.
          * This field shall contain a list of valid device type ids.
          */
-        public List<DescriptorCluster.DeviceTypeStruct> deviceTypes; // list
+        public List<DeviceTypeStruct> deviceTypes; // list
         /**
          * This field shall specify the EcosystemLocationStruct entries in the LocationDirectory attribute associated
          * with this EcosystemDeviceStruct.
@@ -97,8 +113,8 @@ public class EcosystemInformationCluster extends BaseCluster {
         public Integer fabricIndex; // FabricIndex
 
         public EcosystemDeviceStruct(String deviceName, BigInteger deviceNameLastEdit, Integer bridgedEndpoint,
-                Integer originalEndpoint, List<DescriptorCluster.DeviceTypeStruct> deviceTypes,
-                List<String> uniqueLocationIDs, BigInteger uniqueLocationIDsLastEdit, Integer fabricIndex) {
+                Integer originalEndpoint, List<DeviceTypeStruct> deviceTypes, List<String> uniqueLocationIDs,
+                BigInteger uniqueLocationIDsLastEdit, Integer fabricIndex) {
             this.deviceName = deviceName;
             this.deviceNameLastEdit = deviceNameLastEdit;
             this.bridgedEndpoint = bridgedEndpoint;
@@ -110,7 +126,7 @@ public class EcosystemInformationCluster extends BaseCluster {
         }
     }
 
-    public class EcosystemLocationStruct {
+    public static class EcosystemLocationStruct {
         /**
          * This field shall indicate a unique identifier for a specific Ecosystem Information Cluster server instance
          * representing the location independent of its LocationDescriptor field.
@@ -136,14 +152,14 @@ public class EcosystemInformationCluster extends BaseCluster {
          * &quot;Location&quot; in this context is typically used by the user’s grouping into rooms, areas or other
          * logical groupings of how devices are used. So a device might be part of multiple such &quot;Locations&quot;s.
          */
-        public String locationDescriptor; // locationdesc
+        public Locationdesc locationDescriptor; // locationdesc
         /**
          * This field shall indicate the timestamp of when the LocationDescriptor was last modified.
          */
         public BigInteger locationDescriptorLastEdit; // epoch-us
         public Integer fabricIndex; // FabricIndex
 
-        public EcosystemLocationStruct(String uniqueLocationId, String locationDescriptor,
+        public EcosystemLocationStruct(String uniqueLocationId, Locationdesc locationDescriptor,
                 BigInteger locationDescriptorLastEdit, Integer fabricIndex) {
             this.uniqueLocationId = uniqueLocationId;
             this.locationDescriptor = locationDescriptor;
@@ -163,7 +179,6 @@ public class EcosystemInformationCluster extends BaseCluster {
     @Override
     public @NonNull String toString() {
         String str = "";
-        str += "clusterRevision : " + clusterRevision + "\n";
         str += "deviceDirectory : " + deviceDirectory + "\n";
         str += "locationDirectory : " + locationDirectory + "\n";
         return str;

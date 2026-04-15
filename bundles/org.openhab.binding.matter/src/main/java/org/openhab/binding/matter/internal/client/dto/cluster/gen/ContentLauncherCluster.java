@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 // AUTO-GENERATED, DO NOT EDIT!
 
 package org.openhab.binding.matter.internal.client.dto.cluster.gen;
@@ -33,12 +32,10 @@ public class ContentLauncherCluster extends BaseCluster {
     public static final int CLUSTER_ID = 0x050A;
     public static final String CLUSTER_NAME = "ContentLauncher";
     public static final String CLUSTER_PREFIX = "contentLauncher";
-    public static final String ATTRIBUTE_CLUSTER_REVISION = "clusterRevision";
     public static final String ATTRIBUTE_FEATURE_MAP = "featureMap";
     public static final String ATTRIBUTE_ACCEPT_HEADER = "acceptHeader";
     public static final String ATTRIBUTE_SUPPORTED_STREAMING_PROTOCOLS = "supportedStreamingProtocols";
 
-    public Integer clusterRevision; // 65533 ClusterRevision
     public FeatureMap featureMap; // 65532 FeatureMap
     /**
      * This attribute shall provide a list of content types supported by the Video Player or Content App in the form of
@@ -49,12 +46,12 @@ public class ContentLauncherCluster extends BaseCluster {
      * This attribute shall provide information about supported streaming protocols.
      */
     public SupportedProtocolsBitmap supportedStreamingProtocols; // 1 SupportedProtocolsBitmap R V
-    // Structs
 
+    // Structs
     /**
      * This object defines additional name&#x3D;value pairs that can be used for identifying content.
      */
-    public class AdditionalInfoStruct {
+    public static class AdditionalInfoStruct {
         /**
          * This field shall indicate the name of external id, ex. &quot;musicbrainz&quot;.
          */
@@ -73,7 +70,7 @@ public class ContentLauncherCluster extends BaseCluster {
     /**
      * This object defines inputs to a search for content for display or playback.
      */
-    public class ParameterStruct {
+    public static class ParameterStruct {
         /**
          * This field shall indicate the entity type.
          */
@@ -97,7 +94,7 @@ public class ContentLauncherCluster extends BaseCluster {
     /**
      * This object defines inputs to a search for content for display or playback.
      */
-    public class ContentSearchStruct {
+    public static class ContentSearchStruct {
         /**
          * This field shall indicate the list of parameters comprising the search. If multiple parameters are provided,
          * the search parameters shall be joined with &#x27;AND&#x27; logic. e.g. action movies with Tom Cruise will be
@@ -113,7 +110,7 @@ public class ContentLauncherCluster extends BaseCluster {
     /**
      * This object defines dimension which can be used for defining Size of background images.
      */
-    public class DimensionStruct {
+    public static class DimensionStruct {
         /**
          * This field shall indicate the width using the metric defined in Metric
          */
@@ -138,7 +135,7 @@ public class ContentLauncherCluster extends BaseCluster {
      * This object defines style information which can be used by content providers to change the Media Player’s style
      * related properties.
      */
-    public class StyleInformationStruct {
+    public static class StyleInformationStruct {
         /**
          * This field shall indicate the URL of image used for Styling different Video Player sections like Logo,
          * Watermark etc. The syntax of this field shall follow the syntax as specified in RFC 1738 and shall use the
@@ -149,8 +146,8 @@ public class ContentLauncherCluster extends BaseCluster {
          * This field shall indicate the color, in RGB or RGBA, used for styling different Video Player sections like
          * Logo, Watermark, etc. The value shall conform to the 6-digit or 8-digit format defined for CSS sRGB
          * hexadecimal color notation. Examples:
-         * • #76DE19 for R&#x3D;0x76, G&#x3D;0xDE, B&#x3D;0x19, A absent
-         * • #76DE1980 for R&#x3D;0x76, G&#x3D;0xDE, B&#x3D;0x19, A&#x3D;0x80
+         * - #76DE19 for R&#x3D;0x76, G&#x3D;0xDE, B&#x3D;0x19, A absent
+         * - #76DE1980 for R&#x3D;0x76, G&#x3D;0xDE, B&#x3D;0x19, A&#x3D;0x80
          */
         public String color; // string
         /**
@@ -170,7 +167,7 @@ public class ContentLauncherCluster extends BaseCluster {
      * This object defines Branding Information which can be provided by the client in order to customize the skin of
      * the Video Player during playback.
      */
-    public class BrandingInformationStruct {
+    public static class BrandingInformationStruct {
         /**
          * This field shall indicate name of the provider for the given content.
          */
@@ -215,7 +212,7 @@ public class ContentLauncherCluster extends BaseCluster {
      * PlaybackPreferencesStruct defines the preferences sent by the client to the receiver in the ContentLauncher
      * LaunchURL or LaunchContent commands.
      */
-    public class PlaybackPreferencesStruct {
+    public static class PlaybackPreferencesStruct {
         /**
          * This field shall indicate the preferred position (in milliseconds) in the media to launch playback from. In
          * case the position falls in the middle of a frame, the server shall set the position to the beginning of that
@@ -249,7 +246,7 @@ public class ContentLauncherCluster extends BaseCluster {
     /**
      * This structure defines Text/Audio Track preferences.
      */
-    public class TrackPreferenceStruct {
+    public static class TrackPreferenceStruct {
         /**
          * This field shall contain one of the standard Tags for Identifying Languages RFC 5646, which identifies the
          * primary language used in the Track.
@@ -286,8 +283,8 @@ public class ContentLauncherCluster extends BaseCluster {
         TEXT_TRACK_NOT_AVAILABLE(3, "Text Track Not Available"),
         AUDIO_TRACK_NOT_AVAILABLE(4, "Audio Track Not Available");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private StatusEnum(Integer value, String label) {
             this.value = value;
@@ -324,8 +321,8 @@ public class ContentLauncherCluster extends BaseCluster {
         EPISODE(15, "Episode"),
         ANY(16, "Any");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private ParameterEnum(Integer value, String label) {
             this.value = value;
@@ -347,8 +344,8 @@ public class ContentLauncherCluster extends BaseCluster {
         PIXELS(0, "Pixels"),
         PERCENTAGE(1, "Percentage");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private MetricTypeEnum(Integer value, String label) {
             this.value = value;
@@ -425,8 +422,8 @@ public class ContentLauncherCluster extends BaseCluster {
 
     // commands
     /**
-     * Upon receipt, this shall launch the specified content with optional search criteria. This command returns a
-     * Launch Response.
+     * Upon receipt, this shall launch the specified content with optional search criteria.
+     * This command returns a Launch Response.
      */
     public static ClusterCommand launchContent(ContentSearchStruct search, Boolean autoPlay, String data,
             PlaybackPreferencesStruct playbackPreferences, Boolean useCurrentContext) {
@@ -482,7 +479,6 @@ public class ContentLauncherCluster extends BaseCluster {
     @Override
     public @NonNull String toString() {
         String str = "";
-        str += "clusterRevision : " + clusterRevision + "\n";
         str += "featureMap : " + featureMap + "\n";
         str += "acceptHeader : " + acceptHeader + "\n";
         str += "supportedStreamingProtocols : " + supportedStreamingProtocols + "\n";

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -25,12 +25,12 @@ public class VeSyncV2Ver2BypassHumidifierStatus extends VeSyncResponse {
     @SerializedName("result")
     public VeSyncV2Ver2BypassHumidifierStatus.HumidifierStatus result;
 
-    public class HumidifierStatus extends VeSyncResponse {
+    public static class HumidifierStatus extends VeSyncResponse {
 
         @SerializedName("result")
         public VeSyncV2Ver2BypassHumidifierStatus.HumidifierStatus.AirHumidifierStatus result;
 
-        public class AirHumidifierStatus {
+        public static class AirHumidifierStatus {
 
             @SerializedName("powerSwitch")
             public int powerSwitch;

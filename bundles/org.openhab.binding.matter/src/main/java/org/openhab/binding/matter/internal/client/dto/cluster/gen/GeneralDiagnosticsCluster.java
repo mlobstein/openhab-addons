@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 // AUTO-GENERATED, DO NOT EDIT!
 
 package org.openhab.binding.matter.internal.client.dto.cluster.gen;
@@ -33,7 +32,6 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     public static final int CLUSTER_ID = 0x0033;
     public static final String CLUSTER_NAME = "GeneralDiagnostics";
     public static final String CLUSTER_PREFIX = "generalDiagnostics";
-    public static final String ATTRIBUTE_CLUSTER_REVISION = "clusterRevision";
     public static final String ATTRIBUTE_FEATURE_MAP = "featureMap";
     public static final String ATTRIBUTE_NETWORK_INTERFACES = "networkInterfaces";
     public static final String ATTRIBUTE_REBOOT_COUNT = "rebootCount";
@@ -45,7 +43,6 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     public static final String ATTRIBUTE_ACTIVE_NETWORK_FAULTS = "activeNetworkFaults";
     public static final String ATTRIBUTE_TEST_EVENT_TRIGGERS_ENABLED = "testEventTriggersEnabled";
 
-    public Integer clusterRevision; // 65533 ClusterRevision
     public FeatureMap featureMap; // 65532 FeatureMap
     /**
      * The NetworkInterfaces attribute shall be a list of NetworkInterface structs. Each logical network interface on
@@ -63,7 +60,7 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
      * The UpTime attribute shall indicate a best-effort assessment of the length of time, in seconds, since the Node’s
      * last reboot. This attribute SHOULD be incremented to account for the periods of time that a Node is in a
      * low-power or sleep state. This attribute shall only be reset upon a device reboot. This attribute shall be based
-     * on the same System Time source as those used to fulfill any usage of the system-us and system-ms data types
+     * on the same System Time source as those used to fulfill any usage of the systime-us and systime-ms data types
      * within the server.
      */
     public BigInteger upTime; // 2 uint64 R V
@@ -111,18 +108,19 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     /**
      * The TestEventTriggersEnabled attribute shall indicate whether the Node has any TestEventTrigger configured. When
      * this attribute is true, the Node has been configured with one or more test event triggers by virtue of the
-     * internally programmed EnableKey value (see TestEventTrigger) being set to a non-zero value. This attribute can be
-     * used by Administrators to detect if a device was inadvertently commissioned with test event trigger mode enabled,
-     * and take appropriate action (e.g. warn the user and/or offer to remove all fabrics on the Node).
+     * internally programmed EnableKey value (see Section 11.12.7.1, “TestEventTrigger Command”) being set to a non-zero
+     * value. This attribute can be used by Administrators to detect if a device was inadvertently commissioned with
+     * test event trigger mode enabled, and take appropriate action (e.g. warn the user and/or offer to remove all
+     * fabrics on the Node).
      */
     public Boolean testEventTriggersEnabled; // 8 bool R V
-    // Structs
 
+    // Structs
     /**
      * The HardwareFaultChange Event shall indicate a change in the set of hardware faults currently detected by the
      * Node.
      */
-    public class HardwareFaultChange {
+    public static class HardwareFaultChange {
         /**
          * This field shall represent the set of faults currently detected, as per HardwareFaultEnum.
          */
@@ -141,7 +139,7 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     /**
      * The RadioFaultChange Event shall indicate a change in the set of radio faults currently detected by the Node.
      */
-    public class RadioFaultChange {
+    public static class RadioFaultChange {
         /**
          * This field shall represent the set of faults currently detected, as per RadioFaultEnum.
          */
@@ -160,7 +158,7 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     /**
      * The NetworkFaultChange Event shall indicate a change in the set of network faults currently detected by the Node.
      */
-    public class NetworkFaultChange {
+    public static class NetworkFaultChange {
         /**
          * This field shall represent the set of faults currently detected, as per NetworkFaultEnum.
          */
@@ -179,7 +177,7 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     /**
      * The BootReason Event shall indicate the reason that caused the device to start-up.
      */
-    public class BootReason {
+    public static class BootReason {
         /**
          * This field shall contain the reason for this BootReason event.
          */
@@ -194,7 +192,7 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
      * This structure describes a network interface supported by the Node, as provided in the NetworkInterfaces
      * attribute.
      */
-    public class NetworkInterface {
+    public static class NetworkInterface {
         /**
          * This field shall indicate a human-readable (displayable) name for the network interface, that is different
          * from all other interfaces.
@@ -266,8 +264,8 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
         NON_VOLATILE_MEMORY_ERROR(9, "Non Volatile Memory Error"),
         TAMPER_DETECTED(10, "Tamper Detected");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private HardwareFaultEnum(Integer value, String label) {
             this.value = value;
@@ -294,8 +292,8 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
         BLE_FAULT(5, "Ble Fault"),
         ETHERNET_FAULT(6, "Ethernet Fault");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private RadioFaultEnum(Integer value, String label) {
             this.value = value;
@@ -319,8 +317,8 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
         NETWORK_JAMMED(2, "Network Jammed"),
         CONNECTION_FAILED(3, "Connection Failed");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private NetworkFaultEnum(Integer value, String label) {
             this.value = value;
@@ -345,8 +343,8 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
         CELLULAR(3, "Cellular"),
         THREAD(4, "Thread");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private InterfaceTypeEnum(Integer value, String label) {
             this.value = value;
@@ -373,8 +371,8 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
         SOFTWARE_UPDATE_COMPLETED(5, "Software Update Completed"),
         SOFTWARE_RESET(6, "Software Reset");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private BootReasonEnum(Integer value, String label) {
             this.value = value;
@@ -470,7 +468,6 @@ public class GeneralDiagnosticsCluster extends BaseCluster {
     @Override
     public @NonNull String toString() {
         String str = "";
-        str += "clusterRevision : " + clusterRevision + "\n";
         str += "featureMap : " + featureMap + "\n";
         str += "networkInterfaces : " + networkInterfaces + "\n";
         str += "rebootCount : " + rebootCount + "\n";

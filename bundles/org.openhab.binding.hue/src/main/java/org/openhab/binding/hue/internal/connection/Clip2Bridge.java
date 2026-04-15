@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -16,11 +16,18 @@ import java.io.BufferedReader;
 import java.io.ByteArrayInputStream;
 import java.io.Closeable;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.io.Reader;
+import java.net.HttpURLConnection;
 import java.net.InetSocketAddress;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.ByteBuffer;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyManagementException;
+import java.security.NoSuchAlgorithmException;
 import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
@@ -28,8 +35,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
-import java.util.Properties;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ExecutionException;
@@ -40,8 +45,11 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.locks.Lock;
 import java.util.concurrent.locks.ReadWriteLock;
 import java.util.concurrent.locks.ReentrantReadWriteLock;
-import java.util.stream.Collectors;
+import java.util.regex.Pattern;
 
+import javax.net.ssl.HttpsURLConnection;
+import javax.net.ssl.SSLContext;
+import javax.net.ssl.TrustManager;
 import javax.ws.rs.core.MediaType;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -83,7 +91,7 @@ import org.openhab.binding.hue.internal.exceptions.ApiException;
 import org.openhab.binding.hue.internal.exceptions.HttpUnauthorizedException;
 import org.openhab.binding.hue.internal.handler.Clip2BridgeHandler;
 import org.openhab.core.io.net.http.HttpClientFactory;
-import org.openhab.core.io.net.http.HttpUtil;
+import org.openhab.core.io.net.http.TrustAllTrustManager;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -294,7 +302,7 @@ public class Clip2Bridge implements Closeable {
                 eventData.append(frame.getData());
                 BufferedReader reader = new BufferedReader(eventData.contentStreamReader());
                 @SuppressWarnings("null")
-                List<String> receivedLines = reader.lines().collect(Collectors.toList());
+                List<String> receivedLines = reader.lines().toList();
 
                 // a blank line marks the end of an SSE message
                 boolean endOfMessage = !receivedLines.isEmpty()
@@ -434,16 +442,19 @@ public class Clip2Bridge implements Closeable {
      * forced to wait if the session is being created via its single thread access 'write' lock.
      */
     private class SessionSynchronizer implements AutoCloseable {
-        private final Optional<Lock> lockOptional;
+        private final @Nullable Lock lock;
 
         SessionSynchronizer(boolean requireExclusiveAccess) throws InterruptedException {
             Lock lock = requireExclusiveAccess ? sessionUseCreateLock.writeLock() : sessionUseCreateLock.readLock();
-            lockOptional = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS) ? Optional.of(lock) : Optional.empty();
+            this.lock = lock.tryLock(TIMEOUT_SECONDS, TimeUnit.SECONDS) ? lock : null;
         }
 
         @Override
         public void close() {
-            lockOptional.ifPresent(lock -> lock.unlock());
+            Lock lock = this.lock;
+            if (lock != null) {
+                lock.unlock();
+            }
         }
     }
 
@@ -470,8 +481,8 @@ public class Clip2Bridge implements Closeable {
      * <p>
      * The Hue Bridge can get confused if they receive too many HTTP requests in a short period of time (e.g. on start
      * up), or if too many HTTP sessions are opened at the same time, which cause it to respond with an HTML error page.
-     * So this class a) waits to acquire permitCount (or no more than MAX_CONCURRENT_SESSIONS) stream permits, and b)
-     * throttles the requests to a maximum of one per REQUEST_INTERVAL_MILLISECS.
+     * So this class a) waits to acquire permitCount (or no more than {@link #MAX_CONCURRENT_STREAMS}) stream permits,
+     * and b) throttles the requests to a maximum of one per {@link #REQUEST_INTERVAL}.
      */
     private class Throttler implements AutoCloseable {
         private final int permitCount;
@@ -483,13 +494,14 @@ public class Clip2Bridge implements Closeable {
         Throttler(int permitCount) throws InterruptedException {
             this.permitCount = permitCount;
             streamMutex.acquire(permitCount);
-            long delay;
+            Duration delay;
             synchronized (Clip2Bridge.this) {
+                Instant lastRequestTime = Clip2Bridge.this.lastRequestTime;
                 Instant now = Instant.now();
-                delay = Objects.requireNonNull(lastRequestTime
-                        .map(t -> Math.max(0, Duration.between(now, t).toMillis() + REQUEST_INTERVAL_MILLISECS))
-                        .orElse(0L));
-                lastRequestTime = Optional.of(now.plusMillis(delay));
+                delay = lastRequestTime != null ? REQUEST_INTERVAL.minus(Duration.between(lastRequestTime, now))
+                        : Duration.ZERO;
+                delay = delay.isNegative() ? Duration.ZERO : delay;
+                Clip2Bridge.this.lastRequestTime = now.plus(delay);
             }
             Thread.sleep(delay);
         }
@@ -515,14 +527,15 @@ public class Clip2Bridge implements Closeable {
 
     public static final int TIMEOUT_SECONDS = 10;
     private static final int CHECK_ALIVE_SECONDS = 300;
-    private static final int REQUEST_INTERVAL_MILLISECS = 50;
+    private static final Duration REQUEST_INTERVAL = Duration.ofMillis(50);
     private static final int MAX_CONCURRENT_STREAMS = 3;
 
     private static final ResourceReference BRIDGE = new ResourceReference().setType(ResourceType.BRIDGE);
 
     /**
      * Static method to attempt to connect to a Hue Bridge, get its software version, and check if it is high enough to
-     * support the CLIP 2 API.
+     * support the CLIP 2 API. The bridge may redirect HTTP to HTTPS, but since we do not yet have the certificate
+     * configuration parameters for a real bridge, we implement a trustAll policy and disable host name verification.
      *
      * @param hostName the bridge IP address.
      * @return true if bridge is online and it supports CLIP 2, or false if it is online and does not support CLIP 2.
@@ -530,11 +543,43 @@ public class Clip2Bridge implements Closeable {
      * @throws NumberFormatException if the bridge firmware version is invalid.
      */
     public static boolean isClip2Supported(String hostName) throws IOException {
-        String response;
-        Properties headers = new Properties();
-        headers.put(HttpHeader.ACCEPT, MediaType.APPLICATION_JSON);
-        response = HttpUtil.executeUrl("GET", String.format(FORMAT_URL_CONFIG, hostName), headers, null, null,
-                TIMEOUT_SECONDS * 1000);
+        String response = null;
+        HttpURLConnection httpConnection = null;
+        HttpsURLConnection httpsConnection = null;
+        try {
+            URL url = new URI(String.format(FORMAT_URL_CONFIG, hostName)).toURL();
+            httpConnection = (HttpURLConnection) url.openConnection();
+            httpConnection.setInstanceFollowRedirects(false);
+            int status = httpConnection.getResponseCode();
+            if (status == 301 || status == 302) {
+                String redirectUrl = httpConnection.getHeaderField("Location");
+                if (redirectUrl != null && redirectUrl.startsWith("https://")) {
+                    SSLContext sslContext = SSLContext.getInstance("TLS");
+                    sslContext.init(null, new TrustAllTrustManager[] { TrustAllTrustManager.getInstance() }, null);
+                    httpsConnection = (HttpsURLConnection) new URI(redirectUrl).toURL().openConnection();
+                    httpsConnection.setSSLSocketFactory(sslContext.getSocketFactory());
+                    httpsConnection.setHostnameVerifier((hostname, session) -> true); // don't verify host name
+                    try (InputStream in = httpsConnection.getInputStream()) {
+                        response = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                    }
+                }
+            }
+            if (response == null) {
+                try (InputStream in = httpConnection.getInputStream()) {
+                    response = new String(in.readAllBytes(), StandardCharsets.UTF_8);
+                }
+            }
+        } catch (NoSuchAlgorithmException | KeyManagementException | URISyntaxException e) {
+            throw new IOException("isClip2Supported() error connecting to bridge", e);
+        } finally {
+            if (httpConnection != null) {
+                httpConnection.disconnect();
+            }
+            if (httpsConnection != null) {
+                httpsConnection.disconnect();
+            }
+        }
+
         BridgeConfig config = new Gson().fromJson(response, BridgeConfig.class);
         if (Objects.nonNull(config)) {
             String swVersion = config.swversion;
@@ -568,27 +613,45 @@ public class Clip2Bridge implements Closeable {
     private boolean recreatingSession;
     private boolean closing;
     private State onlineState = State.CLOSED;
-    private Optional<Instant> lastRequestTime = Optional.empty();
+    private @Nullable Instant lastRequestTime;
     private Instant sessionExpireTime = Instant.MAX;
 
     private @Nullable Session http2Session;
     private @Nullable Thread recreateThread;
     private @Nullable Future<?> checkAliveTask;
 
+    private static final String IPV4_PART = "(25[0-5]|2[0-4]\\d|1\\d{2}|[1-9]?\\d)";
+    private static final String IPV4_REGEX = "^(" + IPV4_PART + "\\.){3}" + IPV4_PART + "$";
+    private static final Pattern IPV4_PATTERN = Pattern.compile(IPV4_REGEX);
+
     /**
      * Constructor.
      *
      * @param httpClientFactory the OH core HttpClientFactory.
      * @param bridgeHandler the bridge handler.
+     * @param trustManagerProvider the Hue TLS trust manager provider
      * @param hostName the host name (ip address) of the Hue bridge
      * @param applicationKey the application key.
      * @throws ApiException if unable to open Jetty HTTP/2 client.
      */
-    public Clip2Bridge(HttpClientFactory httpClientFactory, Clip2BridgeHandler bridgeHandler, String hostName,
-            String applicationKey) throws ApiException {
+    public Clip2Bridge(HttpClientFactory httpClientFactory, Clip2BridgeHandler bridgeHandler,
+            HueTlsTrustManagerProvider trustManagerProvider, String hostName, String applicationKey)
+            throws ApiException {
         LOGGER.debug("Clip2Bridge()");
         httpClient = httpClientFactory.getCommonHttpClient();
-        http2Client = httpClientFactory.createHttp2Client("hue-clip2", httpClient.getSslContextFactory());
+        SslContextFactory sslContextFactory = new SslContextFactory.Client();
+        try {
+            SSLContext sslContext = SSLContext.getInstance("TLS");
+            sslContext.init(null, new TrustManager[] { trustManagerProvider.getTrustManager() }, null);
+            sslContextFactory.setSslContext(sslContext);
+        } catch (NoSuchAlgorithmException | KeyManagementException e) {
+            throw new ApiException("Could not initialize Hue SSL Context", e);
+        }
+        // don't verify host name when using an IP address since Hue certificates don't contain IP SANs
+        if (IPV4_PATTERN.matcher(hostName).matches()) {
+            sslContextFactory.setEndpointIdentificationAlgorithm("");
+        }
+        http2Client = httpClientFactory.createHttp2Client("hue-clip2", sslContextFactory);
         http2Client.setConnectTimeout(Clip2Bridge.TIMEOUT_SECONDS * 1000);
         http2Client.setIdleTimeout(-1);
         startHttp2Client();
@@ -843,8 +906,8 @@ public class Clip2Bridge implements Closeable {
             }
         } catch (ExecutionException e) {
             Throwable cause = e.getCause();
-            if (cause instanceof HttpUnauthorizedException) {
-                throw (HttpUnauthorizedException) cause;
+            if (cause instanceof HttpUnauthorizedException unauthorizedException) {
+                throw unauthorizedException;
             }
             throw new ApiException("Error sending request", e);
         } catch (TimeoutException e) {

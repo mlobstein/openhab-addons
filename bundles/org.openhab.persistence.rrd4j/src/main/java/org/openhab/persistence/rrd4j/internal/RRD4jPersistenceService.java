@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -66,7 +66,6 @@ import org.openhab.core.persistence.FilterCriteria;
 import org.openhab.core.persistence.FilterCriteria.Ordering;
 import org.openhab.core.persistence.HistoricItem;
 import org.openhab.core.persistence.PersistedItem;
-import org.openhab.core.persistence.PersistenceItemInfo;
 import org.openhab.core.persistence.PersistenceService;
 import org.openhab.core.persistence.QueryablePersistenceService;
 import org.openhab.core.persistence.strategy.PersistenceCronStrategy;
@@ -488,7 +487,10 @@ public class RRD4jPersistenceService implements QueryablePersistenceService {
                         ConsolFun consolFun = getConsolidationFunction(db);
                         FetchRequest request = db.createFetchRequest(consolFun, end, end, 1);
                         Archive archive = db.findMatchingArchive(request);
-                        start = archive.getStartTime() - archive.getArcStep();
+                        long arcStep = archive.getArcStep();
+                        start = archive.getStartTime() - arcStep;
+                        end = end % arcStep == 0 ? end : (end / arcStep + 1) * arcStep; // Make sure end is aligned with
+                                                                                        // matching archive
                     }
                 } else {
                     throw new UnsupportedOperationException(
@@ -690,11 +692,6 @@ public class RRD4jPersistenceService implements QueryablePersistenceService {
                 return lastState;
             }
         };
-    }
-
-    @Override
-    public Set<PersistenceItemInfo> getItemInfo() {
-        return Set.of();
     }
 
     protected synchronized @Nullable RrdDb getDB(String alias, boolean createFileIfAbsent) {

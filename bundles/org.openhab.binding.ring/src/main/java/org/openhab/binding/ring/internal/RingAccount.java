@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,9 +12,11 @@
  */
 package org.openhab.binding.ring.internal;
 
+import java.util.Collection;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
-import org.openhab.binding.ring.internal.data.Profile;
+import org.openhab.binding.ring.internal.device.RingDevice;
 
 /**
  * The AccountHandler implements this interface to facilitate the
@@ -25,26 +27,41 @@ import org.openhab.binding.ring.internal.data.Profile;
  */
 @NonNullByDefault
 public interface RingAccount {
+    Collection<RingDevice> getAllDevices();
+
+    @Nullable
+    RingDevice getDevice(String id);
 
     /**
-     * Get the linked REST client.
+     * Get the timestamp of the last camera snapshot
      *
-     * @return the REST client.
+     * @param id the device id of the Ring cameras
+     * @return a long of the timestamp of the last snapsnot
+     * @throws AuthenticationException when request is invalid.
      */
-    public @Nullable RestClient getRestClient();
+    long getSnapshotTimestamp(String id);
 
     /**
-     * Get the linked user profile.
+     * Get the image from the camera
      *
-     * @return the user profile.
+     * @param id the device id of the Ring cameras
+     * @return a byte array of the camera image
+     * @throws AuthenticationException when request is invalid.
      */
-    public @Nullable Profile getProfile();
+    byte[] getSnapshot(String id);
 
     /**
-     * Get the Account Handler Thing ID
-     * *
-     * 
-     * @return the ring account thing id.
+     * Send a command to the Ring API
+     *
+     * @param url to be sent to the Ring API
      */
-    public String getThingId();
+    void sendCommand(String url);
+
+    /**
+     * Send a command with a payload to the Ring API
+     *
+     * @param url to be sent to the Ring API
+     * @param payload to be sent to the Ring API
+     */
+    void sendCommand(String url, String payload);
 }

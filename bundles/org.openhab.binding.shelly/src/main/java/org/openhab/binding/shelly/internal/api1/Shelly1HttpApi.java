@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -20,6 +20,7 @@ import java.nio.charset.StandardCharsets;
 import java.util.Base64;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
@@ -48,6 +49,7 @@ import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyThingInterface;
 import org.openhab.core.library.unit.ImperialUnits;
 import org.openhab.core.library.unit.SIUnits;
+import org.openhab.core.thing.ThingTypeUID;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -62,11 +64,9 @@ import com.google.gson.JsonSyntaxException;
 @NonNullByDefault
 public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterface {
     private final Logger logger = LoggerFactory.getLogger(Shelly1HttpApi.class);
-    private final ShellyDeviceProfile profile;
 
     public Shelly1HttpApi(String thingName, ShellyThingInterface thing) {
         super(thingName, thing);
-        profile = thing.getProfile();
     }
 
     /**
@@ -78,12 +78,11 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
      */
     public Shelly1HttpApi(String thingName, ShellyThingConfiguration config, HttpClient httpClient) {
         super(thingName, config, httpClient);
-        this.profile = new ShellyDeviceProfile();
     }
 
     @Override
-    public void initialize() throws ShellyApiException {
-        profile.device = getDeviceInfo();
+    public void initialize(String thingName, ShellyThingConfiguration config) throws ShellyApiException {
+        setConfig(thingName, config);
     }
 
     @Override
@@ -122,7 +121,7 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
      * @throws ShellyApiException
      */
     @Override
-    public ShellyDeviceProfile getDeviceProfile(String thingType, @Nullable ShellySettingsDevice device)
+    public ShellyDeviceProfile getDeviceProfile(ThingTypeUID thingTypeUID, @Nullable ShellySettingsDevice device)
             throws ShellyApiException {
         if (device != null) {
             profile.device = device;
@@ -137,7 +136,7 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
         }
 
         // Map settings to device profile for Light and Sense
-        profile.initialize(thingType, json, profile.device);
+        profile.initialize(thingTypeUID, json, profile.device);
 
         // 2nd level initialization
         profile.thingName = profile.device.hostname;
@@ -190,7 +189,8 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
 
     @Override
     public void setRelayTurn(int id, String turnMode) throws ShellyApiException {
-        callApi(getControlUriPrefix(id) + "?" + SHELLY_LIGHT_TURN + "=" + turnMode.toLowerCase(), String.class);
+        callApi(getControlUriPrefix(id) + "?" + SHELLY_LIGHT_TURN + "=" + turnMode.toLowerCase(Locale.ROOT),
+                String.class);
     }
 
     @Override
@@ -200,7 +200,7 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
 
     @Override
     public ShellyShortLightStatus setLightTurn(int id, String turnMode) throws ShellyApiException {
-        return callApi(getControlUriPrefix(id) + "?" + SHELLY_LIGHT_TURN + "=" + turnMode.toLowerCase(),
+        return callApi(getControlUriPrefix(id) + "?" + SHELLY_LIGHT_TURN + "=" + turnMode.toLowerCase(Locale.ROOT),
                 ShellyShortLightStatus.class);
     }
 
@@ -248,7 +248,7 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
             status.charger = profile.settings.externalPower != 0;
         }
         if (status.tmp != null && status.tmp.tC == null && status.tmp.value != null) { // Motion is is missing tC and tF
-            status.tmp.tC = getString(status.tmp.units).toUpperCase().equals(SHELLY_TEMP_FAHRENHEIT)
+            status.tmp.tC = getString(status.tmp.units).toUpperCase(Locale.ROOT).equals(SHELLY_TEMP_FAHRENHEIT)
                     ? ImperialUnits.FAHRENHEIT.getConverterTo(SIUnits.CELSIUS).convert(status.tmp.value).doubleValue()
                     : status.tmp.value;
         }
@@ -493,10 +493,9 @@ public class Shelly1HttpApi extends ShellyHttpClient implements ShellyApiInterfa
      *            plain or hex64 format
      *
      * @throws ShellyApiException
-     * @throws IllegalArgumentException
      */
     @Override
-    public void sendIRKey(String keyCode) throws ShellyApiException, IllegalArgumentException {
+    public void sendIRKey(String keyCode) throws ShellyApiException {
         String type = "";
         if (profile.irCodes.containsKey(keyCode)) {
             type = SHELLY_IR_CODET_STORED;

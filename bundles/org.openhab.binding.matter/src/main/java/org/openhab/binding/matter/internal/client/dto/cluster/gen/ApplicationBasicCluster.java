@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -10,7 +10,6 @@
  *
  * SPDX-License-Identifier: EPL-2.0
  */
-
 // AUTO-GENERATED, DO NOT EDIT!
 
 package org.openhab.binding.matter.internal.client.dto.cluster.gen;
@@ -30,7 +29,6 @@ public class ApplicationBasicCluster extends BaseCluster {
     public static final int CLUSTER_ID = 0x050D;
     public static final String CLUSTER_NAME = "ApplicationBasic";
     public static final String CLUSTER_PREFIX = "applicationBasic";
-    public static final String ATTRIBUTE_CLUSTER_REVISION = "clusterRevision";
     public static final String ATTRIBUTE_VENDOR_NAME = "vendorName";
     public static final String ATTRIBUTE_VENDOR_ID = "vendorId";
     public static final String ATTRIBUTE_APPLICATION_NAME = "applicationName";
@@ -40,7 +38,6 @@ public class ApplicationBasicCluster extends BaseCluster {
     public static final String ATTRIBUTE_APPLICATION_VERSION = "applicationVersion";
     public static final String ATTRIBUTE_ALLOWED_VENDOR_LIST = "allowedVendorList";
 
-    public Integer clusterRevision; // 65533 ClusterRevision
     /**
      * This attribute shall specify a human readable (displayable) name of the vendor for the Content App.
      */
@@ -79,12 +76,12 @@ public class ApplicationBasicCluster extends BaseCluster {
      * This attribute is a list of vendor IDs. Each entry is a vendor-id.
      */
     public List<Integer> allowedVendorList; // 7 list R A
-    // Structs
 
+    // Structs
     /**
      * This indicates a global identifier for an Application given a catalog.
      */
-    public class ApplicationStruct {
+    public static class ApplicationStruct {
         /**
          * This field shall indicate the Connectivity Standards Alliance issued vendor ID for the catalog. The DIAL
          * registry shall use value 0x0000.
@@ -113,8 +110,8 @@ public class ApplicationBasicCluster extends BaseCluster {
         ACTIVE_HIDDEN(2, "Active Hidden"),
         ACTIVE_VISIBLE_NOT_FOCUS(3, "Active Visible Not Focus");
 
-        public final Integer value;
-        public final String label;
+        private final Integer value;
+        private final String label;
 
         private ApplicationStatusEnum(Integer value, String label) {
             this.value = value;
@@ -143,7 +140,6 @@ public class ApplicationBasicCluster extends BaseCluster {
     @Override
     public @NonNull String toString() {
         String str = "";
-        str += "clusterRevision : " + clusterRevision + "\n";
         str += "vendorName : " + vendorName + "\n";
         str += "vendorId : " + vendorId + "\n";
         str += "applicationName : " + applicationName + "\n";

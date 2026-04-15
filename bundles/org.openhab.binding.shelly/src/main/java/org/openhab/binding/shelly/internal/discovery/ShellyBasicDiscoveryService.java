@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -13,24 +13,24 @@
 package org.openhab.binding.shelly.internal.discovery;
 
 import static org.openhab.binding.shelly.internal.ShellyBindingConstants.*;
+import static org.openhab.binding.shelly.internal.ShellyDevices.*;
 import static org.openhab.binding.shelly.internal.util.ShellyUtils.*;
 import static org.openhab.core.thing.Thing.*;
 
-import java.io.IOException;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
-import java.util.TreeMap;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
 import org.eclipse.jetty.client.HttpClient;
 import org.openhab.binding.shelly.internal.api.ShellyApiException;
-import org.openhab.binding.shelly.internal.api.ShellyApiInterface;
 import org.openhab.binding.shelly.internal.api.ShellyApiResult;
 import org.openhab.binding.shelly.internal.api.ShellyDeviceProfile;
+import org.openhab.binding.shelly.internal.api.ShellyDiscoveryInterface;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDevice;
 import org.openhab.binding.shelly.internal.api1.Shelly1HttpApi;
-import org.openhab.binding.shelly.internal.api2.Shelly2ApiRpc;
+import org.openhab.binding.shelly.internal.api2.Shelly2ApiClient;
 import org.openhab.binding.shelly.internal.config.ShellyBindingConfiguration;
 import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
 import org.openhab.binding.shelly.internal.handler.ShellyBaseHandler;
@@ -64,7 +64,7 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
     private @Nullable ServiceRegistration<?> discoveryService;
 
     public ShellyBasicDiscoveryService(BundleContext bundleContext, ShellyThingTable thingTable) {
-        super(SUPPORTED_THING_TYPES_UIDS, TIMEOUT);
+        super(SUPPORTED_THING_TYPES, TIMEOUT);
         this.bundleContext = bundleContext;
         this.thingTable = thingTable;
     }
@@ -83,7 +83,7 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
 
     public void discoveredResult(ThingTypeUID tuid, String model, String serviceName, String address,
             Map<String, Object> properties) {
-        ThingUID uid = ShellyThingCreator.getThingUIDForUnknown(serviceName, model, "");
+        ThingUID uid = ShellyThingCreator.getThingUID(serviceName, model, "");
         logger.debug("Adding discovered thing with id {}", uid.toString());
         properties.put(PROPERTY_MAC_ADDRESS, address);
         String thingLabel = "Shelly BLU " + model + " (" + serviceName + ")";
@@ -110,41 +110,42 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
     }
 
     public static @Nullable DiscoveryResult createResult(boolean gen2, String hostname, String ipAddress,
-            ShellyBindingConfiguration bindingConfig, HttpClient httpClient, ShellyTranslationProvider messages) {
+            ShellyBindingConfiguration bindingConfig, HttpClient httpClient, ShellyTranslationProvider messages,
+            ShellyThingTable thingTable) {
         Logger logger = LoggerFactory.getLogger(ShellyBasicDiscoveryService.class);
         ThingUID thingUID = null;
         ShellyDeviceProfile profile;
         ShellySettingsDevice devInfo;
-        ShellyApiInterface api = null;
+        ShellyDiscoveryInterface api = null;
         boolean auth = false;
         String mac = "";
         String model = "";
         String mode = "";
-        String name = hostname;
+        String name = hostname; // will become the realm for auth response
         String deviceName = "";
         String thingType = "";
-        Map<String, Object> properties = new TreeMap<>();
+        Map<String, String> properties = new HashMap<>();
 
         try {
-            ShellyThingConfiguration config = fillConfig(bindingConfig, ipAddress);
-            api = gen2 ? new Shelly2ApiRpc(name, config, httpClient) : new Shelly1HttpApi(name, config, httpClient);
-            api.initialize();
+            ShellyThingConfiguration config = fillConfig(bindingConfig, ipAddress, name);
+            if (gen2) {
+                api = new Shelly2ApiClient(name, config, httpClient);
+            } else {
+                api = new Shelly1HttpApi(name, config, httpClient);
+            }
+            api.initialize(name, config);
             devInfo = api.getDeviceInfo();
             mac = getString(devInfo.mac);
-            model = devInfo.type;
+            model = getString(devInfo.type);
             auth = getBool(devInfo.auth);
-            if (name.isEmpty() || name.startsWith("shellyplusrange")) {
-                name = devInfo.hostname;
-            }
-            if (devInfo.name != null) {
-                deviceName = getString(devInfo.name);
+            if (name.isEmpty() || name.startsWith(SERVICE_NAME_SHELLYPLUSRANGE_PREFIX)) {
+                config.realm = name = getString(devInfo.hostname);
             }
 
-            thingType = substringBeforeLast(name, "-");
-            profile = api.getDeviceProfile(thingType, devInfo);
-            api.close();
+            thingType = name.contains("-") ? substringBeforeLast(name, "-") : name;
+            mode = getString(devInfo.mode);
+            profile = api.getDeviceProfile(ShellyThingCreator.getThingTypeUID(name, model, mode), devInfo);
             deviceName = profile.name;
-            mode = devInfo.mode;
             properties = ShellyBaseHandler.fillDeviceProperties(profile);
 
             // get thing type from device name
@@ -154,8 +155,14 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
             if (result.isHttpAccessUnauthorized()) {
                 // create shellyunknown thing - will be changed during thing initialization with valid credentials
                 thingUID = ShellyThingCreator.getThingUIDForUnknown(name, model, mode);
+            } else {
+                if (e.getCause() instanceof IllegalArgumentException) {
+                    logger.debug("{}: Unable to discover device", name, e);
+                } else {
+                    logger.debug("{}: Unable to discover device: {}", name, e.getMessage());
+                }
             }
-        } catch (IllegalArgumentException | IOException e) { // maybe some format description was buggy
+        } catch (IllegalArgumentException e) { // maybe some format description was buggy
             logger.debug("Discovery: Unable to discover thing", e);
         } finally {
             if (api != null) {
@@ -177,23 +184,25 @@ public class ShellyBasicDiscoveryService extends AbstractDiscoveryService {
             String thingLabel = deviceName.isEmpty() ? name + " - " + ipAddress
                     : deviceName + " (" + name + "@" + ipAddress + ")";
             logger.debug("{}: Adding Thing to Inbox (type {}, model {}, mode={})", name, thingType, model, mode);
-            return DiscoveryResultBuilder.create(thingUID).withProperties(properties).withLabel(thingLabel)
-                    .withRepresentationProperty(PROPERTY_SERVICE_NAME).build();
+            return DiscoveryResultBuilder.create(thingUID).withProperties(new HashMap<>(properties))
+                    .withLabel(thingLabel).withRepresentationProperty(PROPERTY_SERVICE_NAME).build();
         }
 
         return null;
     }
 
-    public static ShellyThingConfiguration fillConfig(ShellyBindingConfiguration bindingConfig, String address)
-            throws IOException {
+    public static ShellyThingConfiguration fillConfig(ShellyBindingConfiguration bindingConfig, String address,
+            String realm) {
         ShellyThingConfiguration config = new ShellyThingConfiguration();
+        config.realm = realm; // mDNS service name or hostname provided by /shelly
         config.deviceIp = address;
-        config.userId = bindingConfig.defaultUserId;
-        config.password = bindingConfig.defaultPassword;
+        config.userId = getString(bindingConfig.defaultUserId);
+        config.password = getString(bindingConfig.defaultPassword);
+        config.localIp = getString(bindingConfig.localIP);
         return config;
     }
 
-    private static void addProperty(Map<String, Object> properties, String key, @Nullable String value) {
+    private static void addProperty(Map<String, String> properties, String key, @Nullable String value) {
         properties.put(key, value != null ? value : "");
     }
 }

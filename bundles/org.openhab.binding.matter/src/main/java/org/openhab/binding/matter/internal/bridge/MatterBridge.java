@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -14,10 +14,12 @@ package org.openhab.binding.matter.internal.bridge;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Dictionary;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.List;
 import java.util.Map;
 import java.util.Random;
 import java.util.concurrent.CancellationException;
@@ -25,11 +27,12 @@ import java.util.concurrent.ExecutionException;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
+import java.util.stream.Collectors;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
 import org.eclipse.jdt.annotation.Nullable;
+import org.openhab.binding.matter.internal.bridge.devices.BaseDevice;
 import org.openhab.binding.matter.internal.bridge.devices.DeviceRegistry;
-import org.openhab.binding.matter.internal.bridge.devices.GenericDevice;
 import org.openhab.binding.matter.internal.client.MatterClientListener;
 import org.openhab.binding.matter.internal.client.MatterWebsocketService;
 import org.openhab.binding.matter.internal.client.dto.ws.AttributeChangedMessage;
@@ -40,6 +43,7 @@ import org.openhab.binding.matter.internal.client.dto.ws.BridgeEventTriggered;
 import org.openhab.binding.matter.internal.client.dto.ws.EventTriggeredMessage;
 import org.openhab.binding.matter.internal.client.dto.ws.NodeDataMessage;
 import org.openhab.binding.matter.internal.client.dto.ws.NodeStateMessage;
+import org.openhab.binding.matter.internal.client.dto.ws.OtaUpdateAvailableMessage;
 import org.openhab.core.OpenHAB;
 import org.openhab.core.common.ThreadPoolManager;
 import org.openhab.core.common.registry.RegistryChangeListener;
@@ -78,8 +82,8 @@ import com.google.gson.JsonParseException;
 @ConfigurableService(category = "io", label = "Matter Bridge", description_uri = MatterBridge.CONFIG_URI)
 public class MatterBridge implements MatterClientListener {
     private final Logger logger = LoggerFactory.getLogger(MatterBridge.class);
-    private static final String CONFIG_PID = "org.openhab.matter";
-    private static final String CONFIG_URI = "io:matter";
+    protected static final String CONFIG_PID = "org.openhab.matter";
+    protected static final String CONFIG_URI = "io:matter";
 
     // Matter Bridge Device Info *Basic Information Cluster*
     private static final String VENDOR_NAME = "openHAB";
@@ -87,7 +91,7 @@ public class MatterBridge implements MatterClientListener {
     private static final String PRODUCT_ID = "0001";
     private static final String VENDOR_ID = "65521";
 
-    private final Map<String, GenericDevice> devices = new HashMap<>();
+    private final Map<String, BaseDevice> devices = new HashMap<>();
 
     private MatterBridgeClient client;
     private ItemRegistry itemRegistry;
@@ -104,6 +108,7 @@ public class MatterBridge implements MatterClientListener {
     private @Nullable ScheduledFuture<?> modifyFuture;
     private @Nullable ScheduledFuture<?> reconnectFuture;
     private RunningState runningState = RunningState.Stopped;
+    private boolean commissioningWindowOpen = false;
 
     @Activate
     public MatterBridge(final @Reference ItemRegistry itemRegistry, final @Reference MetadataRegistry metadataRegistry,
@@ -181,7 +186,7 @@ public class MatterBridge implements MatterClientListener {
         if (!parseInitialConfig(properties)) {
             this.settings = (new Configuration(properties)).as(MatterBridgeSettings.class);
             if (this.settings.enableBridge) {
-                connectClient();
+                scheduleConnect();
             }
         }
     }
@@ -228,7 +233,9 @@ public class MatterBridge implements MatterClientListener {
             stopClient();
             scheduleConnect();
         } else {
-            manageCommissioningWindow(settings.openCommissioningWindow);
+            if (settings.openCommissioningWindow != commissioningWindowOpen) {
+                manageCommissioningWindow(settings.openCommissioningWindow);
+            }
         }
     }
 
@@ -266,9 +273,13 @@ public class MatterBridge implements MatterClientListener {
     }
 
     @Override
+    public void onEvent(OtaUpdateAvailableMessage message) {
+    }
+
+    @Override
     public void onEvent(BridgeEventMessage message) {
         if (message instanceof BridgeEventAttributeChanged attributeChanged) {
-            GenericDevice d = devices.get(attributeChanged.data.endpointId);
+            BaseDevice d = devices.get(attributeChanged.data.endpointId);
             if (d != null) {
                 d.handleMatterEvent(attributeChanged.data.clusterName, attributeChanged.data.attributeName,
                         attributeChanged.data.data);
@@ -276,9 +287,11 @@ public class MatterBridge implements MatterClientListener {
         } else if (message instanceof BridgeEventTriggered bridgeEventTriggered) {
             switch (bridgeEventTriggered.data.eventName) {
                 case "commissioningWindowOpen":
+                    commissioningWindowOpen = true;
                     updateConfig(Map.of("openCommissioningWindow", true));
                     break;
                 case "commissioningWindowClosed":
+                    commissioningWindowOpen = false;
                     updateConfig(Map.of("openCommissioningWindow", false));
                     break;
                 default:
@@ -355,7 +368,7 @@ public class MatterBridge implements MatterClientListener {
         }
         client.removeListener(this);
         client.disconnect();
-        devices.values().forEach(GenericDevice::dispose);
+        devices.values().forEach(BaseDevice::dispose);
         devices.clear();
     }
 
@@ -441,9 +454,10 @@ public class MatterBridge implements MatterClientListener {
         updateRunningState(RunningState.Starting, null);
 
         // clear out any existing devices
-        devices.values().forEach(GenericDevice::dispose);
+        devices.values().forEach(BaseDevice::dispose);
         devices.clear();
 
+        Map<String, BridgedEndpoint> bridgedEndpoints = new HashMap<>();
         for (Metadata metadata : metadataRegistry.getAll()) {
             final MetadataKey uid = metadata.getUID();
             if ("matter".equals(uid.getNamespace())) {
@@ -454,28 +468,19 @@ public class MatterBridge implements MatterClientListener {
                     }
                     final GenericItem item = (GenericItem) itemRegistry.getItem(uid.getItemName());
                     String deviceType = metadata.getValue();
-                    String[] parts = deviceType.split(",");
+                    List<String> parts = Arrays.asList(deviceType.split(",")).stream().map(String::trim)
+                            .collect(Collectors.toList());
                     for (String part : parts) {
-                        GenericDevice device = DeviceRegistry.createDevice(part.trim(), metadataRegistry, client, item);
+                        BaseDevice device = DeviceRegistry.createDevice(part, metadataRegistry, client, item);
                         if (device != null) {
-                            try {
-                                device.registerDevice().get();
-                                logger.debug("Registered item {} with device type {}", item.getName(),
-                                        device.deviceType());
-                                devices.put(item.getName(), device);
-                            } catch (InterruptedException | ExecutionException e) {
-                                logger.debug("Could not register device with bridge", e);
-                                updateRunningState(RunningState.Error, e.getMessage());
-                                device.dispose();
-                                devices.values().forEach(GenericDevice::dispose);
-                                devices.clear();
-                                return;
-                            }
+                            bridgedEndpoints.put(item.getName(), device.activateBridgedEndpoint());
+                            logger.debug("Registered item {} with device type {}", item.getName(), device.deviceType());
+                            devices.put(item.getName(), device);
                             break;
                         }
                     }
                 } catch (ItemNotFoundException e) {
-                    logger.debug("Could not find item {}", uid.getItemName(), e);
+                    logger.debug("Could not find item {}", uid.getItemName());
                 }
             }
         }
@@ -484,12 +489,27 @@ public class MatterBridge implements MatterClientListener {
             updateRunningState(RunningState.Stopped, "No items found with matter metadata");
             return;
         }
+
+        try {
+            for (BridgedEndpoint be : bridgedEndpoints.values()) {
+                logger.debug("Registering endpoint {}", be.id);
+                client.addEndpoint(be).get();
+            }
+        } catch (InterruptedException | ExecutionException e) {
+            logger.debug("Could not register device with bridge", e);
+            updateRunningState(RunningState.Error, e.getMessage());
+            devices.values().forEach(BaseDevice::dispose);
+            devices.clear();
+            return;
+        }
+
         try {
             client.startBridge().get();
             updateRunningState(RunningState.Running, null);
             updatePairingCodes();
         } catch (InterruptedException | ExecutionException e) {
             logger.debug("Could not start bridge", e);
+            updateRunningState(RunningState.Error, e.getMessage());
         }
     }
 
@@ -497,24 +517,28 @@ public class MatterBridge implements MatterClientListener {
         if (runningState != RunningState.Running) {
             return;
         }
-        if (open) {
+        if (open && !commissioningWindowOpen) {
             try {
                 client.openCommissioningWindow().get();
+                commissioningWindowOpen = true;
             } catch (CancellationException | InterruptedException | ExecutionException e) {
                 logger.debug("Could not open commissioning window", e);
             }
-        } else {
+        } else if (!open && commissioningWindowOpen) {
             try {
                 client.closeCommissioningWindow().get();
+                commissioningWindowOpen = false;
             } catch (CancellationException | InterruptedException | ExecutionException e) {
                 logger.debug("Could not close commissioning window", e);
             }
         }
+        updateConfig(Map.of("openCommissioningWindow", commissioningWindowOpen));
     }
 
     private void updatePairingCodes() {
         try {
             BridgeCommissionState state = client.getCommissioningState().get();
+            commissioningWindowOpen = state.commissioningWindowOpen;
             updateConfig(Map.of("manualPairingCode", state.pairingCodes.manualPairingCode, "qrCode",
                     state.pairingCodes.qrPairingCode, "openCommissioningWindow", state.commissioningWindowOpen));
         } catch (CancellationException | InterruptedException | ExecutionException | JsonParseException e) {
@@ -540,6 +564,8 @@ public class MatterBridge implements MatterClientListener {
     private void updateRunningState(RunningState newState, @Nullable String message) {
         runningState = newState;
         updateConfig(Map.of("runningState", runningState.toString() + (message != null ? ": " + message : "")));
+        // log to INFO here as there is not many places for feedback for IO services
+        logger.info("Matter Bridge State: {} {}", runningState, message != null ? ": " + message : "");
     }
 
     /**

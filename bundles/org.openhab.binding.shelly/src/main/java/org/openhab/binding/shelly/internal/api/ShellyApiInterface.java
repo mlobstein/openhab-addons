@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -15,10 +15,8 @@ package org.openhab.binding.shelly.internal.api;
 import java.util.Map;
 
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.eclipse.jdt.annotation.Nullable;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyOtaCheckResult;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellyRollerStatus;
-import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsDevice;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsLogin;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsStatus;
 import org.openhab.binding.shelly.internal.api1.Shelly1ApiJsonDTO.ShellySettingsUpdate;
@@ -34,17 +32,10 @@ import org.openhab.binding.shelly.internal.config.ShellyThingConfiguration;
  * @author Markus Michels - Initial contribution
  */
 @NonNullByDefault
-public interface ShellyApiInterface {
+public interface ShellyApiInterface extends ShellyDiscoveryInterface {
     boolean isInitialized();
 
-    void initialize() throws ShellyApiException;
-
     void setConfig(String thingName, ShellyThingConfiguration config);
-
-    ShellySettingsDevice getDeviceInfo() throws ShellyApiException;
-
-    ShellyDeviceProfile getDeviceProfile(String thingType, @Nullable ShellySettingsDevice device)
-            throws ShellyApiException;
 
     ShellySettingsStatus getStatus() throws ShellyApiException;
 
@@ -136,11 +127,9 @@ public interface ShellyApiInterface {
 
     void setActionURLs() throws ShellyApiException;
 
-    void sendIRKey(String keyCode) throws ShellyApiException, IllegalArgumentException;
+    void sendIRKey(String keyCode) throws ShellyApiException;
 
     void postEvent(String device, String index, String event, Map<String, String> parms) throws ShellyApiException;
-
-    void close();
 
     void startScan();
 }

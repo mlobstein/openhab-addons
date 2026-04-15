@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -25,12 +25,12 @@ public class VeSyncV2Ver2BypassPurifierStatus extends VeSyncResponse {
     @SerializedName("result")
     public PurifierStatus result;
 
-    public class PurifierStatus extends VeSyncResponse {
+    public static class PurifierStatus extends VeSyncResponse {
 
         @SerializedName("result")
         public AirPurifierStatus result;
 
-        public class AirPurifierStatus {
+        public static class AirPurifierStatus {
             @SerializedName("AQLevel")
             public int airQuality;
 
@@ -106,7 +106,7 @@ public class VeSyncV2Ver2BypassPurifierStatus extends VeSyncResponse {
             @SerializedName("autoPreference")
             public VeSyncV2Ver2BypassPurifierStatus.PurifierStatus.AirPurifierStatus.AirPurifierConfigAutoPref autoPreference;
 
-            public class AirPurifierConfigAutoPref {
+            public static class AirPurifierConfigAutoPref {
                 @SerializedName("autoPreferenceType")
                 public String autoType;
 
@@ -117,7 +117,7 @@ public class VeSyncV2Ver2BypassPurifierStatus extends VeSyncResponse {
             @SerializedName("sleepPreference")
             public VeSyncV2Ver2BypassPurifierStatus.PurifierStatus.AirPurifierStatus.AirPurifierSleepPref sleepPreference;
 
-            public class AirPurifierSleepPref {
+            public static class AirPurifierSleepPref {
                 @SerializedName("sleepPreferenceType")
                 public String sleepPreferenceType;
 

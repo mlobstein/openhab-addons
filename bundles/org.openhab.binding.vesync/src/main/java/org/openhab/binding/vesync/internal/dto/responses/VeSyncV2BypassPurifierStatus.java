@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2025 Contributors to the openHAB project
+ * Copyright (c) 2010-2026 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -25,12 +25,12 @@ public class VeSyncV2BypassPurifierStatus extends VeSyncResponse {
     @SerializedName("result")
     public PurifierStatus result;
 
-    public class PurifierStatus extends VeSyncResponse {
+    public static class PurifierStatus extends VeSyncResponse {
 
         @SerializedName("result")
         public AirPurifierStatus result;
 
-        public class AirPurifierStatus {
+        public static class AirPurifierStatus {
             @SerializedName("enabled")
             public boolean enabled;
 
@@ -61,7 +61,7 @@ public class VeSyncV2BypassPurifierStatus extends VeSyncResponse {
             @SerializedName("configuration")
             public AirPurifierConfig configuration;
 
-            public class AirPurifierConfig {
+            public static class AirPurifierConfig {
                 @SerializedName("display")
                 public boolean display;
 
@@ -71,7 +71,7 @@ public class VeSyncV2BypassPurifierStatus extends VeSyncResponse {
                 @SerializedName("auto_preference")
                 public AirPurifierConfigAutoPref autoPreference;
 
-                public class AirPurifierConfigAutoPref {
+                public static class AirPurifierConfigAutoPref {
                     @SerializedName("type")
                     public String autoType;
 
@@ -83,7 +83,7 @@ public class VeSyncV2BypassPurifierStatus extends VeSyncResponse {
             @SerializedName("extension")
             public AirPurifierExtension extension;
 
-            public class AirPurifierExtension {
+            public static class AirPurifierExtension {
                 @SerializedName("schedule_count")
                 public int scheduleCount;
 
