@@ -68,7 +68,7 @@ public class LacrosseGatewayInterceptorService {
                         localHttpService.createDefaultHttpContext());
             }
         } catch (NamespaceException | ServletException | IOException e) {
-            logger.warn("Error during Interceptor servlet startup", e);
+            logger.warn("Error during LacrosseInterceptorServlet startup", e);
         }
     }
 
@@ -150,6 +150,10 @@ public class LacrosseGatewayInterceptorService {
 
     public Map<String, String> getUnconfiguredGatewayMap() {
         return unconfiguredGatewayIpAddressMap;
+    }
+
+    public void removeUnconfiguredGatewayInfo(String gatewaySn) {
+        unconfiguredGatewayIpAddressMap.remove(gatewaySn);
     }
 
     /**

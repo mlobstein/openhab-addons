@@ -31,11 +31,12 @@
 		<config-description>
 			<parameter name="gatewaySn" type="text" min="8" max="8" required="true">
 				<label>Gateway Serial Number</label>
-				<description>The serial number of the GW1000U gateway used for the weather station</description>
+				<description>The serial number (hex) of the GW1000U gateway used for the weather station</description>
 			</parameter>
 			<parameter name="stationSn" type="text" min="16" max="16" required="true">
 				<label>Station Serial Number</label>
-				<description>The serial number of the weather station</description>
+				<description>The serial number of the weather station; use default if unknown</description>
+				<default>0000000000000000</default>
 			</parameter>
 		</config-description>
 	</thing-type>

@@ -18,6 +18,7 @@ import java.util.AbstractMap;
 import java.util.AbstractMap.SimpleEntry;
 import java.util.Date;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 
 import javax.measure.Unit;
@@ -67,13 +68,12 @@ public class LacrosseHandler extends BaseThingHandler {
         final LacrosseConfiguration configLocal = config;
 
         if (configLocal != null) {
-            this.gatewaySn = configLocal.gatewaySn;
+            this.gatewaySn = configLocal.gatewaySn.toUpperCase(Locale.ENGLISH);
 
             if (THING_TYPE_WEATHER_STATION.equals(this.getThing().getThingTypeUID())) {
-                this.configMap = new AbstractMap.SimpleEntry<String, String>(configLocal.gatewaySn,
-                        configLocal.stationSn);
+                this.configMap = new AbstractMap.SimpleEntry<String, String>(this.gatewaySn, configLocal.stationSn);
             } else if (THING_TYPE_SENSOR.equals(this.getThing().getThingTypeUID())) {
-                this.configMap = new AbstractMap.SimpleEntry<>(configLocal.gatewaySn, List.of(configLocal.sensor1sn,
+                this.configMap = new AbstractMap.SimpleEntry<>(this.gatewaySn, List.of(configLocal.sensor1sn,
                         configLocal.sensor2sn, configLocal.sensor3sn, configLocal.sensor4sn, configLocal.sensor5sn));
             }
         }
