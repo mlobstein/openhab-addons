@@ -114,7 +114,7 @@ public class LacrosseDataHandler {
 
     private String getBatteryStatus(String x) {
         if (("11").equals(x) || ("21").equals(x) || ("31").equals(x)) {
-            return "Good";
+            return "OK";
         } else {
             return "Low";
         }

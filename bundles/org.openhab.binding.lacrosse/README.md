@@ -10,10 +10,7 @@ The Gateway Advanced Setup (GAS) utility from La Crosse is used to change the ga
 After this setting is changed in the gateway all data transmitted will be re-directed to openHAB.
 Note that this also prevents any of these devices used with openHAB from using La Crosse's online services (lacrossealertsmobile.com).
 
-If you have any intention of using La Crosse's alerts service, you should register your weather station with La Crosse before using this binding.
-
 The routines used to allow communication with the gateway were adapted from [weewx-interceptor](https://github.com/matthewwall/weewx-interceptor) and translated into Java using GitHub Copilot.
-
 
 Most of the knowledge on how the GW1000U communicates was originally discussed here: <https://www.wxforum.net/index.php?topic=14299.0>
 
@@ -23,9 +20,11 @@ Discovery is not supported. All things must be added manually.
 
 The LacrosseInterceptorServlet can be accessed at `http://$OPENHAB_IP:8080/request.breq` to verify that it is active.
 
-Any gateways that are configured to connect to openHAB will be displayed here along with the serial number that is needed for the Thing configuration.
+Any gateways that are configured to connect to openHAB will be displayed here along with the hex serial number that is needed for the Thing configuration. The hex serial number value can also be found on the gateway’s web page.
 
 The easiest way to obtain the serial number for the C84612 weather station is to register it with La Crosse Alerts and then view the serial number on their Device Settings page.
+
+If the weather station was previously registered with the La Crosse Alerts, and is still registered with the gateway then entering the station serial number is optional. The default value of `0000000000000000` should work.
 
 The serial number for a TX60-U sensor can be found on the sticker on the back of the sensor.
 
@@ -42,10 +41,10 @@ Using the weather station and TX60-U sensors requires at least 2 gateways.
 
 #### Thing Configuration
 
-| Parameter      | Type   | Required | Description                                                                     |
-|----------------|--------|----------|---------------------------------------------------------------------------------|
-| gatewaySn      | text   | yes      | The serial number (8 chars) of the GW1000U gateway hosting the weather station  |
-| stationSn      | text   | yes      | The serial number (16 chars) of the weather station                             |
+| Parameter      | Type   | Required | Description                                                                                                         |
+|----------------|--------|----------|---------------------------------------------------------------------------------------------------------------------|
+| gatewaySn      | text   | yes      | The serial number (8 chars hex) of the GW1000U gateway hosting the weather station, found on the gateway’s web page |
+| stationSn      | text   | yes      | The serial number (16 chars) of the weather station, default 0000000000000000                                       |
 
 #### Channels
 
@@ -81,29 +80,29 @@ If the sensors were previously connected to the gateway, the sensor serial numbe
 
 #### Thing Configuration
 
-| Parameter      | Type   | Required | Description                                                            |
-|----------------|--------|----------|------------------------------------------------------------------------|
-| gatewaySn      | text   | yes      | The serial number (8 chars) of the GW1000U gateway hosting the sensors |
-| sensor1sn      | text   | yes      | Serial number (16 chars) of the first TX60-U sensor                    |
-| sensor2sn      | text   | no       | Serial number (16 chars) of the second TX60-U sensor (optional)        |
-| sensor3sn      | text   | no       | Serial number (16 chars) of the third TX60-U sensor (optional)         |
-| sensor4sn      | text   | no       | Serial number (16 chars) of the fourth TX60-U sensor (optional)        |
-| sensor5sn      | text   | no       | Serial number (16 chars) of the fifth TX60-U sensor (optional)         |
+| Parameter      | Type   | Required | Description                                                                                                 |
+|----------------|--------|----------|-------------------------------------------------------------------------------------------------------------|
+| gatewaySn      | text   | yes      | The serial number (8 chars hex) of the GW1000U gateway hosting the sensors, found on the gateway’s web page |
+| sensor1sn      | text   | yes      | Serial number (16 chars) of the first TX60-U sensor                                                         |
+| sensor2sn      | text   | no       | Serial number (16 chars) of the second TX60-U sensor (optional)                                             |
+| sensor3sn      | text   | no       | Serial number (16 chars) of the third TX60-U sensor (optional)                                              |
+| sensor4sn      | text   | no       | Serial number (16 chars) of the fourth TX60-U sensor (optional)                                             |
+| sensor5sn      | text   | no       | Serial number (16 chars) of the fifth TX60-U sensor (optional)                                              |
 
 #### Channel Groups
 
 Each sensor (1-5) provides the following channels (All channels are read-only):
 
-| Channel ID         | Label               | Item Type             | Description                                     |
-|--------------------|---------------------|-----------------------|-------------------------------------------------|
-| temperature        | Temperature         | Number:Temperature    | Temperature measured at the sensor (°F)         |
-| temperatureProbe   | External Temperature| Number:Temperature    | Temperature measured by the external probe (°F) |
-| humidity           | Humidity            | Number:Dimensionless  | Humidity measured at the sensor (%)             |
-| heatIndex          | Heat Index          | Number:Temperature    | Calculated heat index (°F)                      |
-| dewPoint           | Dew Point           | Number:Temperature    | Calculated dew point (°F)                       |
-| rfSignalStrength   | RF Signal Strength  | Number:Dimensionless  | RF signal strength as received at gateway (%)   |
-| batteryStatus      | Battery Status      | String                | Battery status (OK or Low)                      |
-| lastSeenDateTime   | Last Seen DateTime  | DateTime              | Last time data was received from the sensor     |
+| Channel ID         | Label               | Item Type             | Description                                      |
+|--------------------|---------------------|-----------------------|--------------------------------------------------|
+| temperature        | Temperature         | Number:Temperature    | Temperature measured at the sensor (°F)          |
+| temperatureProbe   | External Temperature| Number:Temperature    | Temperature measured by the external probe (°F)  |
+| humidity           | Humidity            | Number:Dimensionless  | Humidity measured at the sensor (%)              |
+| heatIndex          | Heat Index          | Number:Temperature    | Calculated heat index (°F)                       |
+| dewPoint           | Dew Point           | Number:Temperature    | Calculated dew point (°F)                        |
+| rfSignalStrength   | RF Signal Strength  | Number:Dimensionless  | RF signal strength as received at gateway (%)    |
+| batteryStatus      | Battery Status      | String                | Battery status (OK or Low) Does not seem to work |
+| lastSeenDateTime   | Last Seen DateTime  | DateTime              | Last time data was received from the sensor      |
 
 ## Full Example
 

@@ -35,7 +35,7 @@
 		<config-description>
 			<parameter name="gatewaySn" type="text" min="8" max="8" required="true">
 				<label>Gateway Serial Number</label>
-				<description>The serial number of the GW1000U gateway used for the TX60-U sensors</description>
+				<description>The serial number (hex) of the GW1000U gateway used for the TX60-U sensors</description>
 			</parameter>
 			<parameter name="sensor1sn" type="text" required="true" min="16" max="16">
 				<label>Sensor 1 Serial Number</label>
@@ -43,19 +43,19 @@
 			</parameter>
 			<parameter name="sensor2sn" type="text" min="16" max="16">
 				<label>Sensor 2 Serial Number</label>
-				<description>The serial number of the second TX60-U sensor {optional)</description>
+				<description>The serial number of the second TX60-U sensor (optional)</description>
 			</parameter>
 			<parameter name="sensor3sn" type="text" min="16" max="16">
 				<label>Sensor 3 Serial Number</label>
-				<description>The serial number of the third TX60-U sensor {optional)</description>
+				<description>The serial number of the third TX60-U sensor (optional)</description>
 			</parameter>
 			<parameter name="sensor4sn" type="text" min="16" max="16">
 				<label>Sensor 4 Serial Number</label>
-				<description>The serial number of the fourth TX60-U sensor {optional)</description>
+				<description>The serial number of the fourth TX60-U sensor (optional)</description>
 			</parameter>
 			<parameter name="sensor5sn" type="text" min="16" max="16">
 				<label>Sensor 5 Serial Number</label>
-				<description>The serial number of the fifth TX60-U sensor {optional)</description>
+				<description>The serial number of the fifth TX60-U sensor (optional)</description>
 			</parameter>
 		</config-description>
 	</thing-type>

@@ -29,12 +29,13 @@ import org.eclipse.jdt.annotation.NonNullByDefault;
  */
 @NonNullByDefault
 public class LacrossePacketUtil {
-    private static final SimpleDateFormat HEADER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'");
+
+    private static final SimpleDateFormat TS_DATE_FORMAT = new SimpleDateFormat("HHmmssddMMyy", Locale.US);
+    private static final SimpleDateFormat HEADER_DATE_FORMAT = new SimpleDateFormat("EEE, dd MMM yyyy HH:mm:ss 'GMT'",
+            Locale.US);
     static {
         HEADER_DATE_FORMAT.setTimeZone(TimeZone.getTimeZone("GMT"));
     }
-
-    private static final SimpleDateFormat TS_DATE_FORMAT = new SimpleDateFormat("HHmmssddMMyy", Locale.US);
 
     protected static String fmtBytes(String data) {
         if (data.isEmpty()) {
