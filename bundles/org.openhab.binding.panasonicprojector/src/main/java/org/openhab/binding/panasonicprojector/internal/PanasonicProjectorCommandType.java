@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2010-2023 Contributors to the openHAB project
+ * Copyright (c) 2010-2024 Contributors to the openHAB project
  *
  * See the NOTICE file(s) distributed with this work for additional
  * information.
@@ -12,10 +12,9 @@
  */
 package org.openhab.binding.panasonicprojector.internal;
 
+import java.util.Locale;
+
 import org.eclipse.jdt.annotation.NonNullByDefault;
-import org.openhab.core.items.Item;
-import org.openhab.core.library.items.StringItem;
-import org.openhab.core.library.items.SwitchItem;
 
 /**
  * Represents all valid command types which could be processed by this
@@ -25,42 +24,25 @@ import org.openhab.core.library.items.SwitchItem;
  */
 @NonNullByDefault
 public enum PanasonicProjectorCommandType {
-    POWER("power", SwitchItem.class),
-    SOURCE("source", StringItem.class),
-    PICTURE_MODE("picturemode", StringItem.class),
-    FREEZE("freeze", SwitchItem.class),
-    BLANK("blank", SwitchItem.class),
-    BUTTON("button", StringItem.class);
-
-    private final String text;
-    private Class<? extends Item> itemClass;
-
-    private PanasonicProjectorCommandType(final String text, Class<? extends Item> itemClass) {
-        this.text = text;
-        this.itemClass = itemClass;
-    }
-
-    @Override
-    public String toString() {
-        return text;
-    }
-
-    public Class<? extends Item> getItemClass() {
-        return itemClass;
-    }
+    POWER,
+    SOURCE,
+    PICTUREMODE,
+    FREEZE,
+    BLANK,
+    BUTTON;
 
     /**
      * Procedure to convert command type string to command type class.
      *
      * @param commandTypeText
-     *            command string e.g. RawData, Command, Brightness
+     *            command string e.g. power, source, picturemode, etc.
      * @return corresponding command type.
      * @throws IllegalArgumentException
      *             No valid class for command type.
      */
     public static PanasonicProjectorCommandType getCommandType(String commandTypeText) throws IllegalArgumentException {
         for (PanasonicProjectorCommandType c : PanasonicProjectorCommandType.values()) {
-            if (c.text.equals(commandTypeText)) {
+            if (c.name().toLowerCase(Locale.ENGLISH).equals(commandTypeText)) {
                 return c;
             }
         }

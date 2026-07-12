@@ -52,14 +52,14 @@ Some notes:
 
 ## Channels
 
-| Channel            | Item Type | Purpose                                                                                                   | Values    | 
-| ------------------ | --------- | --------------------------------------------------------------------------------------------------------- | --------- | 
-| power              | Switch    | Powers the projector on or off.                                                                           |           | 
-| source             | String    | Retrieve or set the input source.                                                                         | See above | 
-| picturemode        | String    | Retrieve or set the picture mode.                                                                         | See above | 
-| freeze             | Switch    | Turn the freeze screen mode on or off.                                                                    |           | 
-| blank              | Switch    | Turn the screen blank mode on or off. Do not toggle this switch continuously over a short period of time. |           | 
-| button             | Number    | Send a key operation command to the projector.                                                            | Send only | 
+| Channel            | Item Type | Purpose                                                                                                   | Values     | 
+| ------------------ | --------- | --------------------------------------------------------------------------------------------------------- | ---------- | 
+| power              | Switch    | Powers the projector on or off.                                                                           |            | 
+| source             | String    | Retrieve or set the input source.                                                                         | See above  | 
+| picturemode        | String    | Retrieve or set the picture mode.                                                                         | See above  | 
+| freeze             | Switch    | Turn the freeze screen mode on or off.                                                                    |            | 
+| blank              | Switch    | Turn the screen blank mode on or off. Do not toggle this switch continuously over a short period of time. |            | 
+| button             | String    | Send a key operation command to the projector.                                                            | Write-only | 
 
 ## Full Example
 
@@ -70,13 +70,15 @@ things/panasonic.things:
 panasonicprojector:projector-serial:hometheater "Projector" [ serialPort="COM5", pollingInterval=10 ]
 
 // serial over IP connection
-panasonicprojector:projector-tcp:hometheater "Projector"  [ host="192.168.0.10", port=4444, pollingInterval=10 ]
+panasonicprojector:projector-tcp:hometheater "Projector" [ host="192.168.0.10", port=4444, pollingInterval=10 ]
 
 ```
 
 items/panasonic.items
 
 ```
+// Note: replace `-serial` with `-tcp` for `projector-tcp` thing type
+
 Switch panasonicPower                                      { channel="panasonicprojector:projector-serial:hometheater:power" }
 String panasonicSource       "Source [%s]"                 { channel="panasonicprojector:projector-serial:hometheater:source" }
 String panasonicPictureMode  "Picture Mode [%s]"           { channel="panasonicprojector:projector-serial:hometheater:picturemode" }

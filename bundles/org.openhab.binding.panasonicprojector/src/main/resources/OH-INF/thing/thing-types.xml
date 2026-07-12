@@ -7,10 +7,13 @@
 	<thing-type id="projector-serial">
 		<label>Panasonic Projector - Serial</label>
 		<description>A Panasonic projector</description>
-		<semantic-equipment-tag>Projector</semantic-equipment-tag>
+		<!-- <semantic-equipment-tag>Projector</semantic-equipment-tag> -->
 
 		<channels>
-			<channel id="power" typeId="system.power"/>
+			<channel id="power" typeId="system.power">
+				<label>Power</label>
+				<description>Powers the projector on or off</description>
+			</channel>
 			<channel id="source" typeId="source"/>
 			<channel id="picturemode" typeId="picturemode"/>
 			<channel id="freeze" typeId="freeze"/>
@@ -37,10 +40,13 @@
 	<thing-type id="projector-tcp">
 		<label>Panasonic Projector - TCP/IP</label>
 		<description>A Panasonic projector via a serial over IP connection</description>
-		<semantic-equipment-tag>Projector</semantic-equipment-tag>
+		<!-- <semantic-equipment-tag>Projector</semantic-equipment-tag> -->
 
 		<channels>
-			<channel id="power" typeId="system.power"/>
+			<channel id="power" typeId="system.power">
+				<label>Power</label>
+				<description>Powers the projector on or off</description>
+			</channel>
 			<channel id="source" typeId="source"/>
 			<channel id="picturemode" typeId="picturemode"/>
 			<channel id="freeze" typeId="freeze"/>
