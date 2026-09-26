@@ -77,7 +77,6 @@ public class RadioThermostatHandler extends BaseThingHandler implements RadioThe
     private static final int DEFAULT_REFRESH_PERIOD_MIN = 2;
     private static final int DEFAULT_LOG_REFRESH_PERIOD_MIN = 10;
     private static final int COMMAND_POLLING_DELAY_SEC = 20;
-    private static final int MODE_POLLING_DELAY_SEC = 60;
 
     private final RadioThermostatStateDescriptionProvider stateDescriptionProvider;
     private final Logger logger = LoggerFactory.getLogger(RadioThermostatHandler.class);
@@ -368,9 +367,9 @@ public class RadioThermostatHandler extends BaseThingHandler implements RadioThe
                 logger.debug("Command: {} -> Not an integer", cmdStr);
             }
 
-            // When processing a command, delay the polling job for 20s unless changing mode then wait 60s
+            // When processing a command, delay the polling job for 20s unless changing mode then wait the refreshPeriod
             if (!MESSAGE.equals(channel)) {
-                rescheduleRefreshJob(!MODE.equals(channel) ? COMMAND_POLLING_DELAY_SEC : MODE_POLLING_DELAY_SEC);
+                rescheduleRefreshJob(!MODE.equals(channel) ? COMMAND_POLLING_DELAY_SEC : refreshPeriod * 60);
             }
 
             switch (channel) {
@@ -489,9 +488,6 @@ public class RadioThermostatHandler extends BaseThingHandler implements RadioThe
                             if (!NO_UPDATE_CHANNEL_IDS.contains(channel.getUID().getId())
                                     && !(DEBOUNCE_CHANNEL_IDS.contains(channel.getUID().getId()) && ignoreUpd)) {
                                 updateChannel(channel.getUID().getId(), rthermData);
-                            } else {
-                                logger.debug("skipping update for channel: {}, ignoreUpd: {}", channel.getUID().getId(),
-                                        ignoreUpd);
                             }
                         });
                     }
