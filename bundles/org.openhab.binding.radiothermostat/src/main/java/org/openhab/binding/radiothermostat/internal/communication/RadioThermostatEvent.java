@@ -27,8 +27,9 @@ public class RadioThermostatEvent extends EventObject {
     private static final long serialVersionUID = 1L;
     private String key;
     private String value;
+    private long startTime;
 
-    public RadioThermostatEvent(Object source, String key, String value) {
+    public RadioThermostatEvent(Object source, String key, String value, long startTime) {
         super(source);
         this.key = key;
         this.value = value;
@@ -40,5 +41,9 @@ public class RadioThermostatEvent extends EventObject {
 
     public String getValue() {
         return value;
+    }
+
+    public long getStartTime() {
+        return startTime;
     }
 }

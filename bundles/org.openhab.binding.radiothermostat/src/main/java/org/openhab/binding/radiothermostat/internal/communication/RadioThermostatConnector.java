@@ -84,15 +84,15 @@ public class RadioThermostatConnector {
      *
      * @param resource the url of the json resource on the thermostat
      */
-    public void getAsyncThermostatData(String resource) {
+    public void getAsyncThermostatData(String resource, long startTime) {
         httpClient.newRequest(buildRequestURL(resource)).method(GET).timeout(30, TimeUnit.SECONDS)
                 .send(new BufferingResponseListener() {
                     @Override
                     public void onComplete(@Nullable Result result) {
                         if (result != null && !result.isFailed()) {
-                            dispatchKeyValue(resource, getContentAsString());
+                            dispatchKeyValue(resource, getContentAsString(), startTime);
                         } else {
-                            dispatchKeyValue(KEY_ERROR, BLANK);
+                            dispatchKeyValue(KEY_ERROR, BLANK, startTime);
                         }
                     }
                 });
@@ -163,11 +163,11 @@ public class RadioThermostatConnector {
      * @param key the key
      * @param value the value
      */
-    private void dispatchKeyValue(String key, @Nullable String value) {
+    private void dispatchKeyValue(String key, @Nullable String value, long startTime) {
         if (value == null) {
             return;
         }
-        RadioThermostatEvent event = new RadioThermostatEvent(this, key, value);
+        RadioThermostatEvent event = new RadioThermostatEvent(this, key, value, startTime);
         for (RadioThermostatEventListener listener : listeners) {
             listener.onNewMessageEvent(event);
         }
