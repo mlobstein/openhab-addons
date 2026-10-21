@@ -1,0 +1,105 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<thing:thing-descriptions bindingId="nuvotuner"
+	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xmlns:thing="https://openhab.org/schemas/thing-description/v1.0.0"
+	xsi:schemaLocation="https://openhab.org/schemas/thing-description/v1.0.0 https://openhab.org/schemas/thing-description-1.0.0.xsd">
+
+	<!-- Nuvo Tuner Thing -->
+	<thing-type id="tuner">
+		<label>Nuvo Tuner</label>
+		<description>
+			Nuvo T2FAM/T2SIR/T2DAB tuner
+		</description>
+
+		<channel-groups>
+			<channel-group id="tuner_a" typeId="tuner">
+				<label>Tuner A</label>
+				<description>The Controls for Tuner A</description>
+			</channel-group>
+			<channel-group id="tuner_b" typeId="tuner">
+				<label>Tuner B</label>
+				<description>The Controls for Tuner B</description>
+			</channel-group>
+		</channel-groups>
+
+		<config-description>
+			<parameter name="serialPort" type="text" required="false">
+				<context>serial-port</context>
+				<limitToOptions>false</limitToOptions>
+				<label>Serial Port</label>
+				<description>Serial Port to use for connecting to the Nuvo tuner</description>
+			</parameter>
+			<parameter name="host" type="text" required="false">
+				<context>network-address</context>
+				<label>Address</label>
+				<description>Host Name or IP Address of the machine connected to the Nuvo tuner (Serial over IP)</description>
+			</parameter>
+			<parameter name="port" type="integer" min="1" max="65535" required="false">
+				<label>Port</label>
+				<description>Communication Port (serial over IP). For Serial over IP connection to the Nuvo tuner.</description>
+				<default>10000</default>
+			</parameter>
+			<parameter name="amFreqMap" type="text" required="false">
+				<context>script</context>
+				<label>AM Frequency Map</label>
+				<description>Used for mapping between AM station frequencies and call signs/descriptions</description>
+			</parameter>
+			<parameter name="fmFreqMap" type="text" required="false">
+				<context>script</context>
+				<label>FM Frequency Map</label>
+				<description>Used for mapping between FM station frequencies and call signs/descriptions</description>
+			</parameter>
+		</config-description>
+	</thing-type>
+
+	<channel-group-type id="tuner">
+		<label>Tuner Controls</label>
+		<description>The controls for this tuner</description>
+		<channels>
+			<channel id="active-band" typeId="active-band"/>
+			<channel id="sirius-channel" typeId="sirius-channel"/>
+			<channel id="am-frequency" typeId="am-frequency"/>
+			<channel id="fm-frequency" typeId="fm-frequency"/>
+			<channel id="dab-channel" typeId="dab-channel"/>
+			<channel id="refresh-channels" typeId="refresh-channels"/>
+		</channels>
+	</channel-group-type>
+
+	<channel-type id="active-band">
+		<item-type>String</item-type>
+		<label>Active Band</label>
+		<description>The currently active band for this tuner</description>
+		<state readOnly="true"/>
+	</channel-type>
+
+	<channel-type id="sirius-channel">
+		<item-type>Number</item-type>
+		<label>Sirius Channel</label>
+		<description>The currently tuned Sirius radio channel for this tuner</description>
+	</channel-type>
+
+	<channel-type id="am-frequency">
+		<item-type>Number</item-type>
+		<label>AM Frequency</label>
+		<description>The currently tuned AM frequency for this tuner</description>
+	</channel-type>
+
+	<channel-type id="fm-frequency">
+		<item-type>Number</item-type>
+		<label>FM Frequency</label>
+		<description>The currently tuned FM frequency for this tuner</description>
+	</channel-type>
+
+	<channel-type id="dab-channel">
+		<item-type>String</item-type>
+		<label>DAB Channel</label>
+		<description>The currently tuned DAB channel for this tuner</description>
+	</channel-type>
+
+	<channel-type id="refresh-channels">
+		<item-type>Switch</item-type>
+		<label>Refresh Sirius/DAB Channel List</label>
+		<description>Trigger a refresh of the Sirius or DAB channel list on this tuner</description>
+	</channel-type>
+
+</thing:thing-descriptions>
